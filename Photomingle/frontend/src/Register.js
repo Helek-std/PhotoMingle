@@ -26,10 +26,8 @@ const Register = () => {
 
             const data = await response.json();
 
-            if (response.ok) {
-                localStorage.setItem("access_token", data.access_token);
-                localStorage.setItem("refresh_token", data.refresh_token);
-                navigate("/myorders");
+            if (response.status === 202) {
+                navigate("/2fa", { state: { email } });
             } else {
                 setError(data.error || "Ошибка регистрации!");
             }

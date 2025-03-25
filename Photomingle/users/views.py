@@ -22,21 +22,30 @@ class RegisterView(APIView):
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
-        normalized_email = CustomUserManager.normalize_email(email)
-        existing_user = CustomUser.objects.filter(email=normalized_email)
-        if not  existing_user:
-            user = CustomUser.objects.create_user(email=email,
-                                           password=password)
-            user.save()
-            user = authenticate(email=email, password=password)
-            if user is not None:
-                refresh = RefreshToken.for_user(user)
-                refresh['email'] = user.email
-                return Response({
-                    "access_token": str(refresh.access_token),
-                    "refresh_token": str(refresh),
-                })
-        return Response({"error": "User with this email already exists"}, status=status.HTTP_409_CONFLICT)
+
+        normalized_email = email.lower()
+        existing_user = CustomUser.objects.filter(email=normalized_email).exists()
+
+        if existing_user:
+            return Response({"error": "Пользователь с таким email уже существует"}, status=status.HTTP_409_CONFLICT)
+
+        user = CustomUser.objects.create_user(email=email, password=password)
+        user.save()
+
+        code = str(random.randint(100000, 999999))
+
+        cache.set(f"2fa_code_{email}", code, timeout=300)
+
+        print(f"{code}")  # Для тестов, потом убрать
+        # send_mail(
+        #     "Ваш код подтверждения",
+        #     f"Ваш код для завершения регистрации: {code}",
+        #     "no-reply@yourapp.com",
+        #     [email],
+        #     fail_silently=False,
+        # )
+
+        return Response({"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED)
 
 class LoginView(APIView):
     def get(self, request):
