@@ -1,6 +1,7 @@
 import random
 
 from django.core.cache import cache
+from django.http import JsonResponse
 from django.shortcuts import render
 from django.views import View
 from django.contrib.auth import authenticate
@@ -10,6 +11,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .models import CustomUser, CustomUserManager
+
+
 
 
 class RegisterView(APIView):
@@ -48,6 +51,8 @@ class LoginView(APIView):
             code = str(random.randint(100000, 999999))
 
             cache.set(f"2fa_code_{email}", code, timeout=300)
+
+            print(code)
             # send_mail(
             #     "Ваш код подтверждения",
             #     f"Ваш код для входа: {code}",
@@ -90,8 +95,32 @@ class MyOrdersView(APIView):
         user_email = request.user.email  # Получаем email пользователя
         return Response({"email": user_email})
 
+class TwoFactorAuthView(APIView):
+    def post(self, request):
+        email = request.data.get("email")
+        code = request.data.get("code")
 
+        if not email or not code:
+            return JsonResponse({"error": "Email и код обязательны"}, status=400)
 
-class TwoFactorAuthView(View):
+        stored_code = cache.get(f"2fa_code_{email}")
+        if not stored_code or stored_code != code:
+            return JsonResponse({"error": "Неверный код или код истек"}, status=400)
+
+        cache.delete(f"2fa_code_{email}")
+
+        try:
+            user = CustomUser.objects.get(email=email)
+        except:
+            return JsonResponse({"error": "Пользователь не найден"}, status=400)
+
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+
+        return JsonResponse({
+            "access_token": access_token,
+            "refresh_token": str(refresh),
+        }, status=200)
+
     def get(self, request):
         return render(request, "index.html")

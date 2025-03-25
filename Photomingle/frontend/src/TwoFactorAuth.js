@@ -1,16 +1,43 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 
 const TwoFactorAuth = () => {
   const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Функция обработки подтверждения кода
-  const handleSubmit = (e) => {
+  const email = location.state?.email; // Получаем email из state
+  if (!email) {
+    navigate("/login"); // Если email нет, редиректим на логин
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Введенный код:", code);
+    setError("");
 
-    // Здесь будет логика проверки кода (например, отправка на сервер)
+    try {
+      const response = await fetch("/api/2fa/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("refresh_token", data.refresh_token);
+
+        navigate("/myorders");
+      } else {
+        setError(data.error || "Неверный код!");
+      }
+    } catch (err) {
+      setError("Ошибка соединения с сервером!");
+    }
   };
+
 
   return (
     <div
