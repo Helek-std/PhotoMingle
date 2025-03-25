@@ -1,4 +1,3 @@
-import random
 from django.shortcuts import render
 from django.views import View
 from django.contrib.auth import authenticate
@@ -34,27 +33,22 @@ class RegisterView(APIView):
         return Response({"error": "User with this email already exists"}, status=status.HTTP_409_CONFLICT)
 
 class LoginView(APIView):
+    def get(self, request):
+        return render(request, "index.html")
+
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
 
         user = authenticate(email=email, password=password)
         if user is not None:
-            code = str(random.randint(100000, 999999))
-            user.two_factor_code = code
-            user.is_two_factor_verified = False
-            user.save()
+            refresh = RefreshToken.for_user(user)
+            refresh['email'] = user.email
 
-            # Отправка кода на email
-            send_mail(
-                "Ваш код подтверждения",
-                f"Ваш код для входа: {code}",
-                "from@example.com",
-                [user.email],
-                fail_silently=False,
-            )
-
-            return Response({"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED)
+            return Response({
+                "access_token": str(refresh.access_token),  # Токен доступа
+                "refresh_token": str(refresh),  # Токен обновления
+            })
 
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
