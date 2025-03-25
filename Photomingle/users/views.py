@@ -1,3 +1,6 @@
+import random
+
+from django.core.cache import cache
 from django.shortcuts import render
 from django.views import View
 from django.contrib.auth import authenticate
@@ -42,13 +45,18 @@ class LoginView(APIView):
 
         user = authenticate(email=email, password=password)
         if user is not None:
-            refresh = RefreshToken.for_user(user)
-            refresh['email'] = user.email
+            code = str(random.randint(100000, 999999))
 
-            return Response({
-                "access_token": str(refresh.access_token),  # Токен доступа
-                "refresh_token": str(refresh),  # Токен обновления
-            })
+            cache.set(f"2fa_code_{email}", code, timeout=300)
+            # send_mail(
+            #     "Ваш код подтверждения",
+            #     f"Ваш код для входа: {code}",
+            #     MAIL_2FA,
+            #     [user.email],
+            #     fail_silently=False,
+            # )
+
+            return Response({"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED)
 
         return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 

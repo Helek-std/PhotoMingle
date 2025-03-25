@@ -5,7 +5,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // Для перехода после успешного логина
+  const navigate = useNavigate(); // Для редиректа
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +20,11 @@ const Login = () => {
 
       const data = await response.json();
 
-      if (response.ok) {
+      if (response.status === 202) {
+        // Если 2FA, перенаправляем на страницу с вводом кода
+        navigate("/2fa", { state: { email } });
+      } else if (response.ok) {
+        // Если аутентификация без 2FA
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("refresh_token", data.refresh_token);
         navigate("/myorders");
