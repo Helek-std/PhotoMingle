@@ -1,0 +1,545 @@
+openapi: 3.0.4
+info:
+  title: Swagger PhotoMingle - OpenAPI 3.0
+  description: |-
+    This is a sample PhotoMingle Server based on the OpenAPI 3.0 specification.  You can find out more about
+    Swagger at [https://swagger.io](https://swagger.io). In the third iteration of the pet store, we've switched to the design first approach!
+    You can now help us improve the API whether it's by making changes to the definition itself or to the code.
+    That way, with time, we can improve the API in general, and expose some of the new features in OAS3.
+
+    Some useful links:
+    - [The PhotoMingle repository](https://github.com/Helek-std/PhotoMingle)
+
+  termsOfService: https://swagger.io/terms/
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.12
+externalDocs:
+  description: Find out more about Swagger
+  url: https://swagger.io
+servers:
+  - url: https://photomingle.com/api/v3
+tags:
+  - name: user
+    description: Information about user
+  - name: image
+    description: Everything about image object
+  - name: orders
+    description: Access to PhotoMingle orders
+    
+paths:
+
+  /me:
+    get:
+      tags:
+        - user
+      summary: Get information about current user
+      responses:
+        '200':
+          description: "User information"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      tags:
+        - user
+      summary: Edit user settings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "shifu"
+                email:
+                  type: string
+                  example: "shifu@example.com"
+      responses:
+        '200':
+          description: "User settings edited"
+        '406':
+          description: "Bad data in user's new settings"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /user/{userID}:
+    get:
+      tags:
+        - user
+      summary: Get user name
+      parameters:
+        - name: userId
+          in: path
+          description: ID of user
+          required: true
+          schema:
+            type: string
+            example: "user-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+      responses:
+        '200':
+          description: User nickname
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: "shifu"
+        '404':
+          description: User not found
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /image:
+    post:
+      tags:
+        - image
+      summary: Upload image to storage
+      operationId: uploadImage
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: base64
+      responses:
+        '200':
+          description: "Succesful file upload"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+        '406':
+          description: "No image in request"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        
+  /image/{imageId}/download:
+    get:
+      tags:
+        - image
+      summary: Download image file by id
+      parameters:
+        - name: imageId
+          in: path
+          description: ID of image
+          required: true
+          schema:
+            type: string
+            example: "image-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+      responses:
+        '200':
+          description: "Successful image download"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  file-data:
+                    type: string
+                    format: base64
+                    example: "SGVsbG8gV29ybGQ="
+        '405':
+          description: "Image to this user is not allowed"
+        '404':
+          description: "Image not found"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  
+  /image/{imageId}:
+    
+    get:
+      tags:
+        - image
+      summary: Get Image Object
+      parameters:
+        - name: imageId
+          in: path
+          description: ID of image
+          required: true
+          schema:
+            type: string
+            example: "image-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+      responses:
+        '200':
+          description: "Successful image download"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+        '405':
+          description: "Image to this user is not allowed"
+        '404':
+          description: "Image not found"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    
+    put:
+      tags:
+        - image
+      summary: Edit image file by specific id
+      parameters:
+        - name: imageId
+          in: path
+          description: ID of image
+          required: true
+          schema:
+            type: string
+            example: "image-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: base64
+                  example: "SGVsbG8gV29ybGQ="
+      responses:
+        '200':
+          description: "Successful image download"
+        '405':
+          description: "Image to this user is not allowed"
+        '404':
+          description: "Image not found"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      
+    
+    delete:
+      tags:
+        - image
+      summary: Delete image by specific id
+      parameters:
+        - name: imageId
+          in: path
+          description: ID of image
+          required: true
+          schema:
+            type: string
+            example: "image-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+      responses:
+        '200':
+          description: "Successful image delete"
+        '405':
+          description: "Image to this user is not allowed"
+        '404':
+          description: "Image not found"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /orders:
+    get:
+      tags: 
+        - orders
+      summary: Return all orders to current user
+      description: Returns array of Order objects linked to User
+      operationId: getOrders
+      responses:
+        '200':
+          description: "Successful operation"
+          content:
+            application/json:
+              schema:
+                properties:
+                  orders:
+                    type: array
+                    items:
+                      type: string
+                      example: "order-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+        '401':
+          description: "Unauthorized request to orders"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      tags:
+        - orders
+      summary: Create new order
+      description: Create new order by clicking button
+      operationId: createOrder
+      responses:
+        '200':
+          description: "Successful creation"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        '401':
+          description: "Unauthorize request"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /orders/{orderId}:
+    get:
+      tags:
+        - orders
+      summary: Return order information by specific id
+      operationId: getOrder
+      parameters:
+        - name: orderId
+          in: path
+          description: ID of order
+          required: true
+          schema:
+            type: string
+            example: "order-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+      responses:
+        '200':
+          description: "Successful order"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        '404':
+          description: "Report with this not found"
+        '403':
+          description: "User doesn't have permissions to order with this id"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    put:
+      tags:
+        - orders
+      summary: Operations with image's list in order (append)
+      operationId: appendImageToOrder
+      parameters:
+        - name: orderId
+          in: path
+          description: ID of order
+          required: true
+          schema:
+            type: string
+            example: "order-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+      requestBody:
+        description: Image object
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Image"
+      responses:
+        '200':
+          description: "Successful append image to order"
+        '405':
+          description: "User can't append images to this owner"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          
+    patch:
+      tags:
+        - orders
+      summary: Operations with image's list in order (delete)
+      operationId: deleteImageFromOrder
+      parameters:
+        - name: orderId
+          in: path
+          description: ID of order
+          required: true
+          schema:
+            type: string
+            example: "order-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+      requestBody:
+        description: Id of image to delete
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                image:
+                  type: string
+                  example: "image-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+      responses:
+        '200':
+          description: "Successful delete image from order"
+        '404':
+          description: "Report with this id not found"
+        '405':
+          description: "User can't delete images of other people (excluding owner of order)"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    delete:
+      tags: 
+        - orders
+      summary: Delete order with this id
+      operationId: deleteOrder
+      parameters:
+        - name: orderId
+          in: path
+          description: ID of order
+          required: true
+          schema:
+            type: string
+            example: "order-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+      responses:
+        '200':
+          description: "Successful delete"
+        '404':
+          description: "Report with this id not found"
+        '405':
+          description: "User doesn't have permissions to delete order with this id"
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    
+    
+components:
+  schemas:
+    User:
+      type: object
+      properties:
+        id: 
+          type: string
+          example: "user-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+        name:
+          type: string
+          example: "shifu"
+        email:
+          type: string
+          example: "user@example.com"
+      xml:
+        name: user
+      required:
+        - id
+        - email
+    Image:
+      type: object
+      properties:
+        id: 
+          type: string
+          example: "image-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+        name:
+          type: string
+          example: "photo.jpg"
+        owner:
+          type: string
+          example: "user-32ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+      xml: 
+        name: image
+      required:
+        - id
+        - name
+        - owner
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "order-12ca757e-fd2c-4c9e-ad12-0897b74aba3f"
+        owner:
+          $ref: '#/components/schemas/User'
+        participants:
+          type: array
+          items:
+            type: string
+            example: "user-d343d750-0560-4bd6-be6a-6c6cde07f19e"
+        images:
+          type: array
+          items: 
+            $ref: '#/components/schemas/Image'
+        link:
+          type: string
+          example: "https://photomingle.com/96fe4161ac21c94b742eaa56eb78a61a"
+        status:
+          type: string
+          description: Order status in the service
+          enum:
+            - active
+            - ended
+            - payment-waiting
+          example: "active"
+        cost:
+          type: integer
+          format: int64
+          example: 5437
+      xml: 
+        name: order
+      required:
+        - id
+        - owner
+        - link
+        - status
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Unexpecting error"
+  requestBodies:
+    User:
+      description: User object of service
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+        application/xml:
+          schema:
+            $ref: '#/components/schemas/User'
+    
+    
+    
+    
+    
