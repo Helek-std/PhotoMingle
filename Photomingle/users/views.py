@@ -1,51 +1,43 @@
-import random
-
-from django.core.cache import cache
 from django.http import JsonResponse
 from django.shortcuts import render
-from django.views import View
 from django.contrib.auth import authenticate
 from rest_framework import status
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import CustomUser, CustomUserManager
 
-
-
+from .otp import EmailSender
+from .models import CustomUser
 
 class RegisterView(APIView):
     def get(self, request):
         return render(request, "index.html")
 
     def post(self, request):
-        email = request.data.get("email")
-        password = request.data.get("password")
+        email: str = request.data.get("email")
+        password: str = request.data.get("password")
 
         normalized_email = email.lower()
         existing_user = CustomUser.objects.filter(email=normalized_email).exists()
-
         if existing_user:
-            return Response({"error": "Пользователь с таким email уже существует"}, status=status.HTTP_409_CONFLICT)
+            return Response(
+                {"error": "Пользователь с таким email уже существует"},
+                status=status.HTTP_409_CONFLICT,
+            )
 
         user = CustomUser.objects.create_user(email=email, password=password)
         user.save()
+        otp_email = EmailSender(normalized_email)
+        if not otp_email.send_mail():
+            return Response(
+                {"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED
+            )
+        else:
+            return Response(
+                 {"message": "Server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
-        code = str(random.randint(100000, 999999))
-
-        cache.set(f"2fa_code_{email}", code, timeout=300)
-
-        print(f"{code}")  # Для тестов, потом убрать
-        # send_mail(
-        #     "Ваш код подтверждения",
-        #     f"Ваш код для завершения регистрации: {code}",
-        #     "no-reply@yourapp.com",
-        #     [email],
-        #     fail_silently=False,
-        # )
-
-        return Response({"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED)
 
 class LoginView(APIView):
     def get(self, request):
@@ -57,22 +49,20 @@ class LoginView(APIView):
 
         user = authenticate(email=email, password=password)
         if user is not None:
-            code = str(random.randint(100000, 999999))
+            otp_email = EmailSender(email.lower())
+            if not otp_email.send_mail():
+                return Response(
+                    {"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED
+                )
+            else:
+                return Response(
+                     {"message": "Server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
 
-            cache.set(f"2fa_code_{email}", code, timeout=300)
+        return Response(
+            {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+        )
 
-            print(code)
-            # send_mail(
-            #     "Ваш код подтверждения",
-            #     f"Ваш код для входа: {code}",
-            #     MAIL_2FA,
-            #     [user.email],
-            #     fail_silently=False,
-            # )
-
-            return Response({"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED)
-
-        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
 class LogoutView(APIView):
     authentication_classes = [JWTAuthentication]
@@ -81,19 +71,28 @@ class LogoutView(APIView):
         try:
             refresh_token = request.COOKIES.get("refresh_token")
             if not refresh_token:
-                return Response({"error": "No refresh token provided"}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error": "No refresh token provided"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
             token = RefreshToken(refresh_token)
             token.blacklist()
 
-            return Response({"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT)
+            return Response(
+                {"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT
+            )
         except Exception:
-            return Response({"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
 
 class MyOrdersView(APIView):
     authentication_classes = [JWTAuthentication]
+
     def get(self, request):
-        auth_header = request.headers.get('Authorization')
+        auth_header = request.headers.get("Authorization")
         if auth_header:
             token_type, token = auth_header.split()
 
@@ -104,6 +103,7 @@ class MyOrdersView(APIView):
         user_email = request.user.email  # Получаем email пользователя
         return Response({"email": user_email})
 
+
 class TwoFactorAuthView(APIView):
     def post(self, request):
         email = request.data.get("email")
@@ -111,12 +111,10 @@ class TwoFactorAuthView(APIView):
 
         if not email or not code:
             return JsonResponse({"error": "Email и код обязательны"}, status=400)
-
-        stored_code = cache.get(f"2fa_code_{email}")
-        if not stored_code or stored_code != code:
+        
+        new_otp = EmailSender(email.lower())
+        if not new_otp.verify(code):
             return JsonResponse({"error": "Неверный код или код истек"}, status=400)
-
-        cache.delete(f"2fa_code_{email}")
 
         try:
             user = CustomUser.objects.get(email=email)
@@ -126,10 +124,13 @@ class TwoFactorAuthView(APIView):
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
-        return JsonResponse({
-            "access_token": access_token,
-            "refresh_token": str(refresh),
-        }, status=200)
+        return JsonResponse(
+            {
+                "access_token": access_token,
+                "refresh_token": str(refresh),
+            },
+            status=200,
+        )
 
     def get(self, request):
         return render(request, "index.html")
