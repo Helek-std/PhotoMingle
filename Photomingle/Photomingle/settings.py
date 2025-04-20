@@ -12,21 +12,25 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+env_path = load_dotenv(os.path.join(BASE_DIR, '.env'))
+load_dotenv(env_path)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0715y^&(g4b@1ywevo5)ue%+qbwl93^uima&dgto81pd$obx&i'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-0715y^&(g4b@1ywevo5)ue%+qbwl93^uima&dgto81pd$obx&i')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', '') != 'False'
 
-ALLOWED_HOSTS = []
+DJANGO_ALLOWED_HOST = os.environ.get('DJANGO_HOST', '')
+ALLOWED_HOSTS = [DJANGO_ALLOWED_HOST] if len(DJANGO_ALLOWED_HOST) != 0 else []
 
 
 # Application definition
@@ -107,6 +111,14 @@ WSGI_APPLICATION = 'Photomingle.wsgi.application'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
 DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get("DB_NAME"),
+        'USER': os.environ.get("DB_USER"),
+        'PASSWORD': os.environ.get("DB_PASSWORD"),
+        'HOST': os.environ.get("DB_HOST"),
+    }
+} if not DEBUG else {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
