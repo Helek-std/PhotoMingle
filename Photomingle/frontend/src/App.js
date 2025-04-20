@@ -5,6 +5,7 @@ import Register from "./Register";
 import TwoFactorAuth from "./TwoFactorAuth";
 import MyOrders from "./MyOrders";
 import Logout from "./Logout";
+import OrderDetailPage from "./OrderDetailPage"
 
 const App = () => {
   return (
@@ -13,8 +14,9 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/2fa" element={<TwoFactorAuth />} />
-        <Route path ="/myorders" element={<MyOrders />} />
-        <Route path ="/logout" element={<Logout />} />
+        <Route path="/orders" element={<MyOrders />} />
+        <Route path="/orders/:orderId" element={<OrderDetailPage />} /> {/* Здесь используем element вместо component */}
+        <Route path="/logout" element={<Logout />} />
       </Routes>
     </Router>
   );

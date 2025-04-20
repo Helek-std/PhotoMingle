@@ -9,6 +9,7 @@ from rest_framework.views import APIView
 
 from .otp import EmailSender
 from .models import CustomUser
+from django.conf import settings
 
 class RegisterView(APIView):
     def get(self, request):
@@ -28,15 +29,19 @@ class RegisterView(APIView):
 
         user = CustomUser.objects.create_user(email=email, password=password)
         user.save()
-        otp_email = EmailSender(normalized_email)
-        if not otp_email.send_mail():
-            return Response(
-                {"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED
-            )
-        else:
-            return Response(
-                 {"message": "Server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+        if not settings.DEBUG:
+            otp_email = EmailSender(normalized_email)
+            if not otp_email.send_mail():
+                return Response(
+                    {"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED
+                )
+            else:
+                return Response(
+                     {"message": "Server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+        return Response(
+            {"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED
+        )
 
 
 class LoginView(APIView):
@@ -49,16 +54,20 @@ class LoginView(APIView):
 
         user = authenticate(email=email, password=password)
         if user is not None:
-            otp_email = EmailSender(email.lower())
-            if not otp_email.send_mail():
-                return Response(
-                    {"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED
-                )
+            if not settings.DEBUG:
+                otp_email = EmailSender(email.lower())
+                if not otp_email.send_mail():
+                    return Response(
+                        {"message": "Enter code from email"}, status=status.HTTP_202_ACCEPTED
+                    )
+                else:
+                    return Response(
+                         {"message": "Server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
             else:
                 return Response(
-                     {"message": "Server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    {"message": "Enter code from email"}, status=status.HTTP_202_ACCEPTED
                 )
-
         return Response(
             {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
         )
@@ -88,22 +97,6 @@ class LogoutView(APIView):
             )
 
 
-class MyOrdersView(APIView):
-    authentication_classes = [JWTAuthentication]
-
-    def get(self, request):
-        auth_header = request.headers.get("Authorization")
-        if auth_header:
-            token_type, token = auth_header.split()
-
-        # Если нет токена, возвращаем ошибку
-        if not auth_header or token_type != "Bearer":
-            return Response({"detail": "Token is missing or invalid"}, status=401)
-
-        user_email = request.user.email  # Получаем email пользователя
-        return Response({"email": user_email})
-
-
 class TwoFactorAuthView(APIView):
     def post(self, request):
         email = request.data.get("email")
@@ -111,10 +104,12 @@ class TwoFactorAuthView(APIView):
 
         if not email or not code:
             return JsonResponse({"error": "Email и код обязательны"}, status=400)
-        
-        new_otp = EmailSender(email.lower())
-        if not new_otp.verify(code):
-            return JsonResponse({"error": "Неверный код или код истек"}, status=400)
+
+
+        if not settings.DEBUG:
+            new_otp = EmailSender(email.lower())
+            if not new_otp.verify(code):
+                return JsonResponse({"error": "Неверный код или код истек"}, status=400)
 
         try:
             user = CustomUser.objects.get(email=email)

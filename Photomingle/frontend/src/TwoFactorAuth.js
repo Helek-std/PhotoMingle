@@ -29,7 +29,7 @@ const TwoFactorAuth = () => {
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("refresh_token", data.refresh_token);
 
-        navigate("/myorders");
+        navigate("/orders");
       } else {
         setError(data.error || "Неверный код!");
       }

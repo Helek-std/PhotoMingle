@@ -27,7 +27,7 @@ const Login = () => {
         // Если аутентификация без 2FA
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("refresh_token", data.refresh_token);
-        navigate("/myorders");
+        navigate("/orders");
       } else {
         setError(data.error || "Ошибка входа!");
       }
