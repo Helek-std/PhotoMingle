@@ -6,6 +6,7 @@ import TwoFactorAuth from "./TwoFactorAuth";
 import MyOrders from "./MyOrders";
 import Logout from "./Logout";
 import OrderDetailPage from "./OrderDetailPage"
+import ImageRedactor from "./ImageRedactor"
 
 const App = () => {
   return (
@@ -16,6 +17,7 @@ const App = () => {
         <Route path="/2fa" element={<TwoFactorAuth />} />
         <Route path="/orders" element={<MyOrders />} />
         <Route path="/orders/:orderId" element={<OrderDetailPage />} /> {/* Здесь используем element вместо component */}
+        <Route path="/orders/:orderId/addImage" element={<ImageRedactor />} /> {}
         <Route path="/logout" element={<Logout />} />
       </Routes>
     </Router>
