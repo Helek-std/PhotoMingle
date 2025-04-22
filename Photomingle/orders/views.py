@@ -1,3 +1,6 @@
+import hashlib
+import os
+import shutil
 import uuid
 
 from django.shortcuts import get_object_or_404
@@ -8,10 +11,16 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from .models import Order, OrderStatus, Image
 from .serializers import OrderSerializer, ImageSerializer
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
 
 class MyOrdersView(APIView):
     permission_classes = [IsAuthenticated]
+
+    def generate_shortcut_url():
+        raw_uuid = uuid.uuid4().hex  # сырой UUID
+        hash_object = hashlib.md5(raw_uuid.encode())
+        return hash_object.hexdigest()[:8]  # первые 8 символов хэша
 
     def get(self, request):
         user = request.user
@@ -33,7 +42,7 @@ class MyOrdersView(APIView):
         order = Order.objects.create(
             name=name,
             owner=user,
-            shortcut_url=str(uuid.uuid4()),
+            shortcut_url=self.generate_shortcut_url(),
             status=OrderStatus.IN_CREATION
         )
 
@@ -42,7 +51,7 @@ class MyOrdersView(APIView):
 
 class OrderDetailView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request, order_id):
         user = request.user
@@ -72,3 +81,35 @@ class OrderDetailView(APIView):
         serializer = ImageSerializer(image)
 
         return Response(serializer.data, status=200)
+
+    def delete(self, request, order_id):
+        user = request.user
+        image_id = request.data.get("image_id")
+
+        if not image_id:
+            return Response({"detail": "Image ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        uuid = order_id.replace("order-", "")
+        order = get_object_or_404(Order, Q(id=uuid) & (Q(owner=user) | Q(guest_users__in=[user])))
+
+        image_obj = Image.objects.filter(id=image_id, order=order).first()
+        if not image_obj:
+            return Response({"detail": "Image not found or does not belong to this order."},
+                            status=status.HTTP_404_NOT_FOUND)
+        image_path = image_obj.file.path
+        os.remove(image_path)
+        image_obj.delete()
+        return Response({"detail": "Image deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+class OrderInviteJoinView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, invite_token):
+        user = request.user
+        order = get_object_or_404(Order, invite_token=invite_token)
+
+        if user == order.owner:
+            return Response({"detail": "Вы уже владелец этого заказа."})
+
+        order.guest_users.add(user)
+        return Response({"detail": "Вы добавлены в участники заказа.", "order_id": str(order.id)})

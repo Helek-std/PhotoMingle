@@ -1,3 +1,5 @@
+import os
+
 import pyotp
 import smtplib, ssl
 import hashlib
@@ -71,7 +73,8 @@ class EmailSender(OTPGenerator):
         msg['Subject'] = 'Ваш двухфакторный код для PhotoMingle'
 
         html_content: str = ""
-        with open('users/templates/email.html', 'r', encoding='utf-8') as file:
+        print(os.getcwd())
+        with open('../users/templates/email.html', 'r', encoding='utf-8') as file:
             html_content = file.read()
         html_content = html_content.replace("{two_factor_code}", self.code)
         body = MIMEText(html_content, 'html')
@@ -94,6 +97,8 @@ class EmailSender(OTPGenerator):
                 print ("SMTP Server: error while connecting to client's server")
             except smtplib.SMTPResponseException as e:
                 print ("SMTP Error: ", e)
+            except Exception as e:
+                print("Another Error: ", e)
             finally:
                 return False
         return False
