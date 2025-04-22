@@ -17,7 +17,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 class MyOrdersView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def generate_shortcut_url():
+    def generate_shortcut_url(self):
         raw_uuid = uuid.uuid4().hex  # сырой UUID
         hash_object = hashlib.md5(raw_uuid.encode())
         return hash_object.hexdigest()[:8]  # первые 8 символов хэша
@@ -104,12 +104,12 @@ class OrderDetailView(APIView):
 class OrderInviteJoinView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, invite_token):
+    def get(self, request, shortcut_url):
         user = request.user
-        order = get_object_or_404(Order, invite_token=invite_token)
+        order = get_object_or_404(Order, shortcut_url=shortcut_url)
 
         if user == order.owner:
-            return Response({"detail": "Вы уже владелец этого заказа."})
+            return Response({"detail": "Вы уже находитесь в учатниках этого заказа или являетесь его владельцем."})
 
         order.guest_users.add(user)
-        return Response({"detail": "Вы добавлены в участники заказа.", "order_id": str(order.id)})
+        return Response({"detail": "Вы добавлены в участники заказа.", "order_name": str(order.name)})

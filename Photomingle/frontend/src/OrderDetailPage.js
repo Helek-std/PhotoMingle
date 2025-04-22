@@ -86,7 +86,7 @@ const OrderDetailPage = () => {
   return (
     <div>
       <h2>Заказ: {order.name}</h2>
-      <p><strong>ID:</strong> {order.id}</p>
+      <p><strong>Ссылка для приглашения:</strong> {order.shortcut_url}</p>
       <p><strong>Статус:</strong> {order.status}</p>
 
       <h3>Изображения</h3>
