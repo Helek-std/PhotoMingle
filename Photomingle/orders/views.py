@@ -1,21 +1,19 @@
 import hashlib
 import os
-import shutil
 import uuid
 
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from .authenticate import IsAuthenticatedViaJWT
 from django.db.models import Q
 from .models import Order, OrderStatus, Image
 from .serializers import OrderSerializer, ImageSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
-
 class MyOrdersView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedViaJWT]
 
     def generate_shortcut_url(self):
         raw_uuid = uuid.uuid4().hex  # сырой UUID
@@ -50,7 +48,7 @@ class MyOrdersView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class OrderDetailView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedViaJWT]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get(self, request, order_id):
@@ -102,7 +100,7 @@ class OrderDetailView(APIView):
         return Response({"detail": "Image deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
 class OrderInviteJoinView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedViaJWT]
 
     def get(self, request, shortcut_url):
         user = request.user
@@ -115,7 +113,7 @@ class OrderInviteJoinView(APIView):
         return Response({"detail": "Вы добавлены в участники заказа.", "order_name": str(order.name)})
 
 class AddImage(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedViaJWT]
     parser_classes = [MultiPartParser, FormParser]
 
     def get(self, request, order_id):
