@@ -9,8 +9,7 @@ const MyOrdersPage = () => {
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newName, setNewName] = useState('');
-  
-  // Состояния для загрузки и редактирования фото
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [printFormat, setPrintFormat] = useState('3x4');
@@ -268,7 +267,7 @@ const MyOrdersPage = () => {
         maxWidth: '800px',
         boxShadow: '0 4px 8px rgba(0,0,0,0.1)'
       }}>
-        <h3 style={{ color: 'white', marginTop: 0, textAlign: 'center' }}>Создание нового заказа</h3>
+        <h3 style={{ color: 'white', marginTop: 0, textAlign: 'center' }}>Добавление фотографии</h3>
         
         {/* Выбор формата */}
         <div style={{ 
@@ -404,7 +403,7 @@ const MyOrdersPage = () => {
               boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
             }}
           >
-            {creating ? 'Создание...' : 'Создать заказ'}
+            {creating ? 'Добавление...' : 'Добавить фото'}
           </button>
         </div>
       </div>

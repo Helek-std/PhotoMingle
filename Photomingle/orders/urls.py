@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import MyOrdersView, OrderDetailView
+from .views import MyOrdersView, OrderDetailView, OrderInviteJoinView, AddImage
 
 urlpatterns = [
     path('orders/', MyOrdersView.as_view(), name='orders-list-create'),  # Список заказов и создание нового

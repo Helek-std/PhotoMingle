@@ -11,7 +11,8 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from .models import Order, OrderStatus, Image
 from .serializers import OrderSerializer, ImageSerializer
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
 
 class MyOrdersView(APIView):
     permission_classes = [IsAuthenticated]
