@@ -1,3 +1,5 @@
+import os
+
 import pyotp
 import smtplib, ssl
 import hashlib
@@ -98,6 +100,8 @@ class EmailSender(OTPGenerator):
                 print ("SMTP Server: error while connecting to client's server")
             except smtplib.SMTPResponseException as e:
                 print ("SMTP Error: ", e)
+            except Exception as e:
+                print("Another Error: ", e)
             finally:
                 return False
         return False
