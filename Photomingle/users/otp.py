@@ -4,6 +4,8 @@ import pyotp
 import smtplib, ssl
 import hashlib
 import base64
+from typing import Optional
+from pathlib import Path
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from django.core.cache import cache
@@ -16,7 +18,7 @@ class CacheManager:
         return base64.b32encode(base32_payload.encode()).decode()
 
     @staticmethod
-    def get_cache_value(key: str) -> str | None:
+    def get_cache_value(key: str) -> Optional[str]:
         return cache.get(key)
 
     @staticmethod
@@ -43,7 +45,7 @@ class OTPGenerator:
         return self.code == otp
 
     @property
-    def code(self) -> str | None:
+    def code(self) -> Optional[str]:
         return CacheManager.get_cache_value(self._otp_key)
         
     @code.setter
@@ -73,8 +75,9 @@ class EmailSender(OTPGenerator):
         msg['Subject'] = 'Ваш двухфакторный код для PhotoMingle'
 
         html_content: str = ""
-        print(os.getcwd())
-        with open('../users/templates/email.html', 'r', encoding='utf-8') as file:
+        BASE_DIR = Path(__file__).resolve().parent.parent
+
+        with open(BASE_DIR / 'users/templates/email.html', 'r', encoding='utf-8') as file:
             html_content = file.read()
         html_content = html_content.replace("{two_factor_code}", self.code)
         body = MIMEText(html_content, 'html')

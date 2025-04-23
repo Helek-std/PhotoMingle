@@ -6,6 +6,12 @@
 # C extensions
 *.so
 
+#migrations
+**/migrations/0*_initial.py
+
+# media
+media
+
 # Distribution / packaging
 .Python
 build/
@@ -177,3 +183,9 @@ cython_debug/
 #node
 
 /**/node_modules/
+
+
+# static file
+static/
+
+*.sqlite3
