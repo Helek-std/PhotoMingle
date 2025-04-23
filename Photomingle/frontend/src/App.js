@@ -7,6 +7,7 @@ import MyOrders from "./MyOrders";
 import Logout from "./Logout";
 import OrderDetailPage from "./OrderDetailPage"
 import InvitedOrderPage from "./InvitedOrderPage"
+import ImageRedactor from "./ImageRedactor"
 
 const App = () => {
   return (
@@ -18,7 +19,7 @@ const App = () => {
         <Route path="/orders" element={<MyOrders />} />
         <Route path="/orders/:orderId" element={<OrderDetailPage />} />
         <Route path="/orders/invite/:shortcut_url" element={<InvitedOrderPage />} />
-	<Route path="/orders/:orderId/addImage" element={<ImageRedactor />} />
+	      <Route path="/orders/:orderId/addImage" element={<ImageRedactor />} />
         <Route path="/logout" element={<Logout />} />
       </Routes>
     </Router>
