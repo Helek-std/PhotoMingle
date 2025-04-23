@@ -30,11 +30,20 @@ def order_image_upload_path(instance, filename):
 def order_preview_upload_path(instance, filename):
     return f"{instance.order.id}/previews/{filename}"
 
+class PrintFormat(models.Model):
+    name = models.CharField(max_length=100)
+    width_mm = models.PositiveIntegerField()
+    height_mm = models.PositiveIntegerField()
+    price = models.IntegerField()
+
 class Image(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file = models.ImageField(upload_to=order_image_upload_path)
     preview = models.ImageField(upload_to=order_preview_upload_path, null=True, blank=True)
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="images")
+    format = models.ForeignKey(PrintFormat,on_delete=models.CASCADE,null=True)
 
     def __str__(self):
         return f"Image {self.id} for Order {self.order.name}"
+
+

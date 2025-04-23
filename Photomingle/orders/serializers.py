@@ -1,6 +1,11 @@
 from rest_framework import serializers
-from .models import Order, Image
+from .models import Order, Image, PrintFormat
 
+
+class PrintFormatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrintFormat
+        fields = ['id', 'name', 'width_mm', 'height_mm', 'price']
 
 class ImageSerializer(serializers.ModelSerializer):
     class Meta:

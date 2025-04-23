@@ -4,6 +4,8 @@ from django.conf import settings
 
 from rest_framework.authentication import CSRFCheck
 from rest_framework import exceptions
+from rest_framework_simplejwt.exceptions import InvalidToken
+
 
 def get_response(req):
     return None
@@ -37,9 +39,10 @@ class CustomAuthentication(JWTAuthentication):
         raw_token = self.token(request=request)
         if raw_token is None:
             return None
-        
-        validated_token = self.get_validated_token(raw_token)
-        # enforce_csrf(request)
+        try:
+            validated_token = self.get_validated_token(raw_token)
+        except InvalidToken:
+            return None
         return self.get_user(validated_token), validated_token
     
     def has_permission(self, request, view):

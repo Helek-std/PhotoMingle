@@ -18,6 +18,7 @@ const ImageRedactor = () => {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const imageRef = useRef(null);
   const containerRef = useRef(null);
+  const [formats, setFormats] = useState([]);
   const [imageInfo, setImageInfo] = useState({
     naturalWidth: 0,
     naturalHeight: 0,
@@ -26,18 +27,6 @@ const ImageRedactor = () => {
     offsetX: 0,
     offsetY: 0,
   });
-
-  // Популярные форматы с соотношением сторон
-  const formats = [
-    { name: '3x4', ratio: 3/4 },
-    { name: '4x6', ratio: 2/3 },
-    { name: '10x15', ratio: 2/3 },
-    { name: '13x18', ratio: 13/18 },
-    { name: '15x21', ratio: 5/7 },
-    { name: '16x9', ratio: 16/9 },
-    { name: '1x1', ratio: 1 },
-    { name: 'A4', ratio: 210/297 }
-  ];
 
   const getCroppedImage = async () => {
     if (!imageRef.current || !selectedFile) return null;
@@ -116,7 +105,34 @@ const ImageRedactor = () => {
       setCropArea({ x: 0, y: 0 }); // Сброс позиции при смене формата
     }
   }, [printFormat, previewUrl]);
+  useEffect(() => {
+  const fetchOrderAndFormats = async () => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/addImage/`);
+      const data = await response.json();
 
+      const formatData = data.print_formats.map(f => ({
+        ...f,
+        ratio: f.width_mm / f.height_mm,
+      }));
+
+      setOrders([data.order]); // если где-то используется orders
+      setFormats(formatData);
+
+      if (!printFormat && formatData.length > 0) {
+        setPrintFormat(formatData[0].name);
+      }
+
+      setLoading(false);
+    } catch (err) {
+      console.error('Ошибка при загрузке данных:', err);
+      setError('Не удалось загрузить данные');
+      setLoading(false);
+    }
+  };
+
+  fetchOrderAndFormats();
+}, [orderId]);
   const handleCreateOrder = async () => {
 
     const token = localStorage.getItem('access_token');

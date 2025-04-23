@@ -8,8 +8,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .authenticate import IsAuthenticatedViaJWT
 from django.db.models import Q
-from .models import Order, OrderStatus, Image
-from .serializers import OrderSerializer, ImageSerializer
+from .models import Order, OrderStatus, Image, PrintFormat
+from .serializers import OrderSerializer, ImageSerializer, PrintFormatSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 class MyOrdersView(APIView):
@@ -119,7 +119,7 @@ class AddImage(APIView):
     def get(self, request, order_id):
         user = request.user
         try:
-            uuid = order_id.replace("order-", "")  # удалить префикс
+            uuid = order_id.replace("order-", "")
             order = get_object_or_404(
                 Order,
                 Q(id=uuid) & (Q(owner=user) | Q(guest_users__in=[user]))
@@ -127,9 +127,15 @@ class AddImage(APIView):
         except Exception:
             return Response({"detail": "Order not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = OrderSerializer(order)
-        return Response(serializer.data)
-    
+        order_serializer = OrderSerializer(order)
+        formats = PrintFormat.objects.all()
+        formats_serializer = PrintFormatSerializer(formats, many=True)
+
+        return Response({
+            "order": order_serializer.data,
+            "print_formats": formats_serializer.data
+        })
+
     def put(self, request, order_id):
         user = request.user
         uuid = order_id.replace("order-", "")
@@ -139,8 +145,21 @@ class AddImage(APIView):
         if not image_file:
             return Response({"detail": "No image file provided."}, status=400)
 
-        # Создаём объект Image и сохраняем файл в нужное место
-        image = Image.objects.create(order=order, file=image_file)
-        serializer = ImageSerializer(image)
+        print_format_name = request.data.get('print_format')
+        if not print_format_name:
+            return Response({"detail": "Print format not provided."}, status=400)
 
+        # Пытаемся найти формат по имени
+        print_format = PrintFormat.objects.filter(name=print_format_name).first()
+        if not print_format:
+            return Response({"detail": "Invalid print format."}, status=400)
+
+        # Создаём объект Image, связываем с форматом
+        image = Image.objects.create(
+            order=order,
+            file=image_file,
+            format=print_format  # предполагается наличие ForeignKey на PrintFormat
+        )
+
+        serializer = ImageSerializer(image)
         return Response(serializer.data, status=200)
