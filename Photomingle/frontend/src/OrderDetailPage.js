@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
+
 const OrderDetailPage = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
@@ -55,6 +56,25 @@ const OrderDetailPage = () => {
     navigate(`/orders/${orderId}/addImage`);
   };
 
+  const handleCompleteOrder = async () => {
+    try {
+      const response = await fetch(`/api/orders/${orderId}/`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) throw new Error('Ошибка при завершении заказа');
+
+      // Обновим данные заказа после завершения
+      fetchOrderDetails();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
   return (
     <div style={{ backgroundColor: '#fff', minHeight: '100vh', padding: '40px', color: '#333' }}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
@@ -92,6 +112,11 @@ const OrderDetailPage = () => {
               <h3 style={{ marginTop: 0 }}>{order.name}</h3>
               <p><strong>Ссылка для приглашения:</strong> <a href={order.shortcut_url} style={{ color: '#4CAF50' }}>{order.shortcut_url}</a></p>
               <p><strong>Статус:</strong> {order.status}</p>
+
+              {/* Добавляем отображение стоимости заказа */}
+              <p style={{ fontSize: '1.2rem', marginTop: '10px', color: '#333' }}>
+                <strong>Общая стоимость:</strong> {order.total_price} ₽
+              </p>
             </div>
 
             <div style={{
@@ -114,6 +139,7 @@ const OrderDetailPage = () => {
                       backgroundColor: '#fff'
                     }}>
                       <img src={img.preview || img.file} alt="Preview" style={{ width: '100%', borderRadius: '4px' }} />
+                      {order.status !== 'in_work' && (
                       <button
                         onClick={() => handleDeleteImage(img.id)}
                         style={{
@@ -128,6 +154,7 @@ const OrderDetailPage = () => {
                       >
                         Удалить
                       </button>
+                    )}
                     </div>
                   ))}
                 </div>
@@ -136,22 +163,41 @@ const OrderDetailPage = () => {
               )}
 
               <div style={{ marginTop: '30px', textAlign: 'center' }}>
-                <button
-                  onClick={goToAddImagePage}
-                  style={{
-                    backgroundColor: '#4CAF50',
-                    color: 'white',
-                    padding: '10px 20px',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-                  }}
-                >
-                  + Добавить изображение
-                </button>
-              </div>
+                  <button
+                    onClick={goToAddImagePage}
+                    disabled={order.status === 'in_work'}
+                    style={{
+                      backgroundColor: order.status === 'in_work' ? '#ccc' : '#4CAF50',
+                      color: 'white',
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: order.status === 'in_work' ? 'not-allowed' : 'pointer',
+                      fontSize: '16px',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+                      marginRight: '10px'
+                    }}
+                  >
+                    + Добавить изображение
+                  </button>
+
+                  <button
+                    onClick={handleCompleteOrder}
+                    disabled={order.status === 'in_work'}
+                    style={{
+                      backgroundColor: order.status === 'in_work' ? '#ccc' : '#2196F3',
+                      color: 'white',
+                      padding: '10px 20px',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: order.status === 'in_work' ? 'not-allowed' : 'pointer',
+                      fontSize: '16px',
+                      boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                    }}
+                  >
+                    Завершить заказ
+                  </button>
+                </div>
             </div>
           </>
         )}

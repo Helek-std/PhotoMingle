@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .authenticate import IsAuthenticatedViaJWT
-from django.db.models import Q
+from django.db.models import Q, Sum, F
 from .models import Order, OrderStatus, Image, PrintFormat
 from .serializers import OrderSerializer, ImageSerializer, PrintFormatSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -63,7 +63,17 @@ class OrderDetailView(APIView):
             return Response({"detail": "Order not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = OrderSerializer(order)
-        return Response(serializer.data)
+
+        # Считаем стоимость: сумма всех image.print_format.price
+        total_price = order.images.aggregate(
+            total=Sum(F('format__price'))
+        )['total'] or 0
+
+        # Добавляем стоимость к сериализованному ответу
+        response_data = serializer.data
+        response_data['total_price'] = total_price
+
+        return Response(response_data)
 
     def put(self, request, order_id):
         user = request.user
@@ -99,6 +109,30 @@ class OrderDetailView(APIView):
         image_obj.delete()
         return Response({"detail": "Image deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
+    def post(self, request, order_id):
+        user = request.user
+        try:
+            uuid = order_id.replace("order-", "")  # удалить префикс
+            order = get_object_or_404(
+                Order,
+                Q(id=uuid) & (Q(owner=user) | Q(guest_users__in=[user]))
+            )
+        except Exception:
+            return Response({"detail": "Order not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
+
+        order.status = OrderStatus.IN_WORK
+        order.save()
+
+        serializer = OrderSerializer(order)
+
+        total_price = order.images.aggregate(
+            total=Sum(F('format__price'))
+        )['total'] or 0
+
+        response_data = serializer.data
+        response_data['total_price'] = total_price
+
+        return Response(response_data, status=status.HTTP_200_OK)
 class OrderInviteJoinView(APIView):
     permission_classes = [IsAuthenticatedViaJWT]
 
