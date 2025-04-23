@@ -10,6 +10,16 @@ from rest_framework.views import APIView
 from .otp import EmailSender
 from .models import CustomUser
 from django.conf import settings
+from django.middleware import csrf
+from .authenticate import CustomAuthentication
+
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+        
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
 
 class RegisterView(APIView):
     def get(self, request):
@@ -74,7 +84,7 @@ class LoginView(APIView):
 
 
 class LogoutView(APIView):
-    authentication_classes = [JWTAuthentication]
+    authentication_classes = [CustomAuthentication]
 
     def get(self, request):
         try:
@@ -102,6 +112,7 @@ class TwoFactorAuthView(APIView):
         email = request.data.get("email")
         code = request.data.get("code")
 
+        response = Response()
         if not email or not code:
             return JsonResponse({"error": "Email и код обязательны"}, status=400)
 
@@ -116,16 +127,26 @@ class TwoFactorAuthView(APIView):
         except:
             return JsonResponse({"error": "Пользователь не найден"}, status=400)
 
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-
-        return JsonResponse(
-            {
-                "access_token": access_token,
-                "refresh_token": str(refresh),
-            },
-            status=200,
+        tokens = get_tokens_for_user(user)
+        access_token = str(tokens['access'])
+        
+        response.set_cookie(
+            key = settings.SIMPLE_JWT['AUTH_COOKIE'], 
+            value = access_token,
+            expires = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'],
+            secure = settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+            httponly = settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+            samesite = settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
         )
+        csrf.get_token(request)
+
+        response.data = {
+                "access_token": access_token,
+                "refresh_token": str(tokens["refresh"]),
+        }
+
+        response.status_code = 200
+        return response
 
     def get(self, request):
         return render(request, "index.html")
