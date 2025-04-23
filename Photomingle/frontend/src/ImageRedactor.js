@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
-const MyOrdersPage = () => {
+const ImageRedactor = () => {
   const { orderId } = useParams();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -385,11 +385,17 @@ const MyOrdersPage = () => {
             </div>
           </div>
         )}
-        
-        {/* Кнопка создания */}
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <button 
-            onClick={handleCreateOrder} 
+
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-around',
+          alignItems: 'center',
+          marginTop: '20px',
+          flexWrap: 'wrap',
+          gap: '10px'
+        }}>
+          <button
+            onClick={handleCreateOrder}
             disabled={creating}
             style={{
               padding: '12px 30px',
@@ -405,10 +411,29 @@ const MyOrdersPage = () => {
           >
             {creating ? 'Добавление...' : 'Добавить фото'}
           </button>
+
+          <button
+            onClick={() => window.history.back()}
+            style={{
+              padding: '12px 30px',
+              backgroundColor: 'transparent',
+              color: 'white',
+              border: '2px solid white',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              transition: 'background-color 0.3s',
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.1)')}
+            onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+          >
+            Назад к заказу
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default MyOrdersPage;
+export default ImageRedactor;

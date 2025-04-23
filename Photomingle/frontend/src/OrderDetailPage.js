@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-
+import { useParams, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 const OrderDetailPage = () => {
   const { orderId } = useParams();
+  const navigate = useNavigate();
   const [order, setOrder] = useState(null);
-  const [newImage, setNewImage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -23,7 +23,7 @@ const OrderDetailPage = () => {
           'Content-Type': 'application/json',
         },
       });
-      if (!response.ok) throw new Error('Ошибка загрузки');
+      if (!response.ok) throw new Error('Ошибка загрузки данных');
       const data = await response.json();
       setOrder(data);
     } catch (err) {
@@ -34,83 +34,128 @@ const OrderDetailPage = () => {
   };
 
   const handleDeleteImage = async (imageId) => {
-      try {
-        const response = await fetch(`/api/orders/${orderId}/`, {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ image_id: imageId }),
-        });
-
-        if (!response.ok) throw new Error('Ошибка при удалении');
-
-        fetchOrderDetails(); // Обновить список после удаления
-      } catch (err) {
-        console.error('Ошибка удаления изображения:', err);
-      }
-    };
-
-
-  const handleImageUpload = async (e) => {
-    e.preventDefault();
-    if (!newImage) return;
-
-    const formData = new FormData();
-    formData.append('file', newImage);
-
     try {
       const response = await fetch(`/api/orders/${orderId}/`, {
-        method: 'PUT',
+        method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: formData,
+        body: JSON.stringify({ image_id: imageId }),
       });
 
-      if (!response.ok) throw new Error('Ошибка при загрузке');
-
-      // Обновляем заказ после добавления изображения
-      fetchOrderDetails();
-      setNewImage(null);
+      if (!response.ok) throw new Error('Ошибка при удалении изображения');
+      fetchOrderDetails(); // Обновить данные после удаления
     } catch (err) {
       console.error(err);
     }
   };
 
-  if (loading) return <p>Загрузка...</p>;
-  if (error) return <p style={{ color: 'red' }}>{error}</p>;
-  if (!order) return <p>Заказ не найден.</p>;
+  const goToAddImagePage = () => {
+    navigate(`/orders/${orderId}/addImage`);
+  };
 
   return (
-    <div>
-      <h2>Заказ: {order.name}</h2>
-      <p><strong>Ссылка для приглашения:</strong> {order.shortcut_url}</p>
-      <p><strong>Статус:</strong> {order.status}</p>
+    <div style={{ backgroundColor: '#fff', minHeight: '100vh', padding: '40px', color: '#333' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <div style={{ textAlign: 'left', marginBottom: '20px' }}>
+         <Link to="/orders" style={{
+            padding: '10px 15px',
+            backgroundColor: '#e0e0e0',
+            color: '#333',
+            textDecoration: 'none',
+            borderRadius: '4px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}>
+            Назад к списку заказов
+         </Link>
+        </div>
+        <h2 style={{ textAlign: 'center', fontSize: '2rem', marginBottom: '30px', color: '#4CAF50' }}>
+          Детали заказа
+        </h2>
 
-      <h3>Изображения</h3>
-        {order.images && order.images.length > 0 ? (
-          <ul>
-            {order.images.map((img) => (
-              <li key={img.id} style={{ marginBottom: '10px' }}>
-                <img src={img.preview || img.file} alt="Preview" width={120} />
-                <br />
-                <button onClick={() => handleDeleteImage(img.id)} style={{ color: 'red' }}>
-                  Удалить
-                </button>
-              </li>
-            ))}
-          </ul>
+        {loading ? (
+          <p style={{ textAlign: 'center' }}>Загрузка данных...</p>
+        ) : error ? (
+          <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>
+        ) : !order ? (
+          <p style={{ textAlign: 'center' }}>Заказ не найден</p>
         ) : (
-          <p>Нет изображений</p>
-        )}
+          <>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '8px',
+              padding: '20px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+              marginBottom: '30px'
+            }}>
+              <h3 style={{ marginTop: 0 }}>{order.name}</h3>
+              <p><strong>Ссылка для приглашения:</strong> <a href={order.shortcut_url} style={{ color: '#4CAF50' }}>{order.shortcut_url}</a></p>
+              <p><strong>Статус:</strong> {order.status}</p>
+            </div>
 
-      <h4>Добавить изображение</h4>
-      <form onSubmit={handleImageUpload}>
-        <input type="file" accept="image/*" onChange={(e) => setNewImage(e.target.files[0])} />
-        <button type="submit">Загрузить</button>
-      </form>
+            <div style={{
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px',
+              padding: '20px',
+              boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+            }}>
+              <h4 style={{ marginBottom: '15px', color: '#333' }}>Изображения</h4>
+
+              {order.images && order.images.length > 0 ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
+                  {order.images.map((img) => (
+                    <div key={img.id} style={{
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      padding: '10px',
+                      width: '140px',
+                      textAlign: 'center',
+                      backgroundColor: '#fff'
+                    }}>
+                      <img src={img.preview || img.file} alt="Preview" style={{ width: '100%', borderRadius: '4px' }} />
+                      <button
+                        onClick={() => handleDeleteImage(img.id)}
+                        style={{
+                          marginTop: '10px',
+                          color: 'white',
+                          backgroundColor: '#f44336',
+                          border: 'none',
+                          padding: '5px 10px',
+                          borderRadius: '4px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>Нет изображений</p>
+              )}
+
+              <div style={{ marginTop: '30px', textAlign: 'center' }}>
+                <button
+                  onClick={goToAddImagePage}
+                  style={{
+                    backgroundColor: '#4CAF50',
+                    color: 'white',
+                    padding: '10px 20px',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '16px',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                  }}
+                >
+                  + Добавить изображение
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };
