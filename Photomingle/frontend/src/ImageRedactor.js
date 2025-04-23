@@ -28,6 +28,36 @@ const ImageRedactor = () => {
     offsetY: 0,
   });
 
+  // Настройки изображения
+  const [imageSettings, setImageSettings] = useState({
+    brightness: 100,
+    contrast: 100,
+    saturation: 100,
+    sharpness: 0,
+    hue: 0,
+    shadow: 0,
+    highlight: 0,
+  });
+
+
+  const getImageFilterStyle = () => {
+    return {
+      filter: `
+        brightness(${imageSettings.brightness}%)
+        contrast(${imageSettings.contrast}%)
+        saturate(${imageSettings.saturation}%)
+        hue-rotate(${imageSettings.hue}deg)
+      `,
+    };
+  };
+
+  const handleSettingChange = (setting, value) => {
+    setImageSettings(prev => ({
+      ...prev,
+      [setting]: value
+    }));
+  };
+
   const getCroppedImage = async () => {
     if (!imageRef.current || !selectedFile) return null;
 
@@ -35,11 +65,15 @@ const ImageRedactor = () => {
     const scale = imageInfo.naturalWidth / imageInfo.displayedWidth;
     
     // Рассчитываем реальные координаты и размеры обрезки
-    const realX = cropArea.x * scale;
-    const realY = cropArea.y * scale;
     const [displayWidth, displayHeight] = calculateCropSize(format.ratio);
     const realWidth = displayWidth * scale;
     const realHeight = displayHeight * scale;
+    
+    // Проверяем, чтобы область обрезки не выходила за границы изображения
+    const maxX = imageInfo.naturalWidth - realWidth;
+    const maxY = imageInfo.naturalHeight - realHeight;
+    const realX = Math.min(Math.max(cropArea.x * scale, 0), maxX);
+    const realY = Math.min(Math.max(cropArea.y * scale, 0), maxY);
 
     // Создаем canvas для обрезки
     const canvas = document.createElement('canvas');
@@ -47,6 +81,15 @@ const ImageRedactor = () => {
     canvas.height = realHeight;
     
     const ctx = canvas.getContext('2d');
+    
+    // Применяем фильтры к изображению
+    ctx.filter = `
+      brightness(${imageSettings.brightness}%)
+      contrast(${imageSettings.contrast}%)
+      saturate(${imageSettings.saturation}%)
+      hue-rotate(${imageSettings.hue}deg)
+    `;
+    
     ctx.drawImage(
       imageRef.current,
       realX, realY,          // Начальные координаты обрезки
@@ -54,6 +97,33 @@ const ImageRedactor = () => {
       0, 0,                  // Начальные координаты на canvas
       realWidth, realHeight  // Размеры на canvas
     );
+
+    // Дополнительная обработка теней и засветки
+    if (imageSettings.shadow !== 0 || imageSettings.highlight !== 0) {
+      const shadowHighlightCanvas = document.createElement('canvas');
+      shadowHighlightCanvas.width = realWidth;
+      shadowHighlightCanvas.height = realHeight;
+      const shCtx = shadowHighlightCanvas.getContext('2d');
+      
+      shCtx.drawImage(canvas, 0, 0);
+      
+      // Применяем тени и засветки
+      if (imageSettings.shadow !== 0) {
+        shCtx.globalCompositeOperation = 'multiply';
+        shCtx.fillStyle = `rgba(0,0,0,${Math.abs(imageSettings.shadow)/100})`;
+        shCtx.fillRect(0, 0, realWidth, realHeight);
+      }
+      
+      if (imageSettings.highlight !== 0) {
+        shCtx.globalCompositeOperation = 'screen';
+        shCtx.fillStyle = `rgba(255,255,255,${Math.abs(imageSettings.highlight)/100})`;
+        shCtx.fillRect(0, 0, realWidth, realHeight);
+      }
+      
+      shCtx.globalCompositeOperation = 'source-over';
+      ctx.clearRect(0, 0, realWidth, realHeight);
+      ctx.drawImage(shadowHighlightCanvas, 0, 0);
+    }
 
     // Конвертируем canvas в Blob
     return new Promise((resolve) => {
@@ -68,26 +138,27 @@ const ImageRedactor = () => {
   
   const handleImageLoad = () => {
     if (!imageRef.current || !containerRef.current) return;
-
+  
     const img = imageRef.current;
     const container = containerRef.current;
     const containerWidth = container.clientWidth;
     const containerHeight = container.clientHeight;
-
+  
     // Рассчитываем масштаб для вписывания изображения
     const scale = Math.min(
       containerWidth / img.naturalWidth,
-      containerHeight / img.naturalHeight
+      containerHeight / img.naturalHeight,
+      1 // Максимальный масштаб - 100%
     );
-
+  
     // Фактические размеры отображаемого изображения
     const displayedWidth = img.naturalWidth * scale;
     const displayedHeight = img.naturalHeight * scale;
-
+  
     // Смещение для центрирования
     const offsetX = (containerWidth - displayedWidth) / 2;
     const offsetY = (containerHeight - displayedHeight) / 2;
-
+  
     setImageInfo({
       naturalWidth: img.naturalWidth,
       naturalHeight: img.naturalHeight,
@@ -96,13 +167,15 @@ const ImageRedactor = () => {
       offsetX,
       offsetY,
     });
-
-    
+  
+    // Сброс позиции кадрирования
+    setCropArea({ x: 0, y: 0 });
   };
 
   useEffect(() => {
     if (previewUrl) {
-      setCropArea({ x: 0, y: 0 }); // Сброс позиции при смене формата
+      // При смене формата сбрасываем позицию кадрирования
+      setCropArea({ x: 0, y: 0 });
     }
   }, [printFormat, previewUrl]);
   useEffect(() => {
@@ -134,7 +207,6 @@ const ImageRedactor = () => {
   fetchOrderAndFormats();
 }, [orderId]);
   const handleCreateOrder = async () => {
-
     const token = localStorage.getItem('access_token');
     if (!token) {
       alert('Вы не авторизованы!');
@@ -209,34 +281,63 @@ const ImageRedactor = () => {
 
   const handleMouseMove = (e) => {
     if (!isDragging || !previewUrl) return;
-
+  
     const rect = containerRef.current.getBoundingClientRect();
     const mouseX = e.clientX - rect.left - imageInfo.offsetX;
     const mouseY = e.clientY - rect.top - imageInfo.offsetY;
-
+  
     // Размеры рамки кадрирования
     const format = formats.find(f => f.name === printFormat);
     const [width, height] = calculateCropSize(format.ratio);
-
+  
     // Новые координаты с ограничениями
     let newX = mouseX - dragStart.x;
     let newY = mouseY - dragStart.y;
-
-    newX = Math.max(0, Math.min(newX, imageInfo.displayedWidth - width));
-    newY = Math.max(0, Math.min(newY, imageInfo.displayedHeight - height));
-
+  
+    // Ограничиваем перемещение рамки границами изображения
+    const maxX = imageInfo.displayedWidth - width;
+    const maxY = imageInfo.displayedHeight - height;
+    newX = Math.max(0, Math.min(newX, maxX));
+    newY = Math.max(0, Math.min(newY, maxY));
+  
     setCropArea({ x: newX, y: newY });
   };
 
   const calculateCropSize = (ratio) => {
+    if (!imageInfo.displayedWidth || !imageInfo.displayedHeight) return [0, 0];
+    
     let width, height;
     
+    // Рассчитываем размеры рамки кадрирования в зависимости от соотношения сторон
     if (ratio > imageInfo.displayedWidth / imageInfo.displayedHeight) {
+      // Если соотношение сторон формата шире, чем у изображения
       width = imageInfo.displayedWidth;
       height = width / ratio;
     } else {
+      // Если соотношение сторон формата уже или такое же, как у изображения
       height = imageInfo.displayedHeight;
       width = height * ratio;
+    }
+    
+    // Гарантируем, что рамка не будет слишком маленькой
+    const minSize = 30; // Минимальный размер рамки в пикселях
+    if (width < minSize) {
+      width = minSize;
+      height = width / ratio;
+      // Проверяем, чтобы высота не превышала доступную
+      if (height > imageInfo.displayedHeight) {
+        height = imageInfo.displayedHeight;
+        width = height * ratio;
+      }
+    }
+    if (height < minSize) {
+      height = minSize;
+      width = height * ratio;
+      // Проверяем, чтобы ширина не превышала доступную
+      if (width > imageInfo.displayedWidth) {
+        width = imageInfo.displayedWidth;
+        height = width / ratio;
+      }
     }
     
     return [width, height];
@@ -247,24 +348,66 @@ const ImageRedactor = () => {
   };
 
   const getCropBoxStyle = () => {
-    if (!previewUrl) return {};
+    if (!previewUrl || !imageInfo.displayedWidth || !imageInfo.displayedHeight) return {};
     
     const format = formats.find(f => f.name === printFormat);
-    const [width, height] = calculateCropSize(format.ratio);
+  const [width, height] = calculateCropSize(format.ratio);
 
-    return {
-      position: 'absolute',
-      border: '2px dashed rgba(255,255,255,0.8)',
-      width: `${width}px`,
-      height: `${height}px`,
-      transform: `translate(${cropArea.x}px, ${cropArea.y}px)`,
-      cursor: 'move',
-      boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)',
-      left: `${imageInfo.offsetX}px`,
-      top: `${imageInfo.offsetY}px`,
-    };
+  // Рассчитываем максимально возможные координаты, чтобы рамка не выходила за границы
+  const maxX = imageInfo.displayedWidth - width;
+  const maxY = imageInfo.displayedHeight - height;
+  
+  // Ограничиваем текущие координаты рамки
+  const boundedX = Math.max(0, Math.min(cropArea.x, maxX));
+  const boundedY = Math.max(0, Math.min(cropArea.y, maxY));
+
+  // Если текущие координаты были за пределами, обновляем состояние
+  if (cropArea.x !== boundedX || cropArea.y !== boundedY) {
+    setTimeout(() => setCropArea({ x: boundedX, y: boundedY }), 0);
+  }
+
+  return {
+    position: 'absolute',
+    border: '2px dashed rgba(255,255,255,0.8)',
+    width: `${width}px`,
+    height: `${height}px`,
+    left: `${imageInfo.offsetX}px`,
+    top: `${imageInfo.offsetY}px`,
+    transform: `translate(${boundedX}px, ${boundedY}px)`,
+    cursor: 'move',
+    boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)',
+    pointerEvents: 'auto',
+  };
   };
 
+  const renderSettingSlider = (label, setting, min, max, step = 1) => (
+    <div style={{ marginBottom: '15px' }}>
+      <label style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between',
+        color: 'white',
+        marginBottom: '5px'
+      }}>
+        <span>{label}</span>
+        <span>{imageSettings[setting]}{setting === 'hue' ? '°' : '%'}</span>
+      </label>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={imageSettings[setting]}
+        onChange={(e) => handleSettingChange(setting, parseInt(e.target.value))}
+        style={{
+          width: '100%',
+          height: '6px',
+          borderRadius: '3px',
+          background: 'linear-gradient(to right, #f5f5f5, #4CAF50)',
+          outline: 'none',
+        }}
+      />
+    </div>
+  );
 
   return (
     <div style={{
@@ -374,6 +517,7 @@ const ImageRedactor = () => {
                 border: '2px solid rgba(255,255,255,0.3)',
                 cursor: isDragging ? 'grabbing' : 'default',
               }}
+              onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
@@ -392,6 +536,7 @@ const ImageRedactor = () => {
                   maxHeight: '100%',
                   width: 'auto',
                   height: 'auto',
+                  ...getImageFilterStyle()
                 }}
               />
               <div 
@@ -399,19 +544,65 @@ const ImageRedactor = () => {
                 onMouseDown={handleMouseDown}
               />
             </div>
+
+            {/* Настройки изображения */}
+            <div style={{
+              marginTop: '20px',
+              backgroundColor: 'rgba(0,0,0,0.2)',
+              padding: '15px',
+              borderRadius: '4px'
+            }}>
+              <h4 style={{ color: 'white', marginTop: 0 }}>Настройки изображения</h4>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '20px'
+              }}>
+                <div>
+                  {renderSettingSlider('Яркость', 'brightness', 0, 200)}
+                  {renderSettingSlider('Контраст', 'contrast', 0, 200)}
+                  {renderSettingSlider('Насыщенность', 'saturation', 0, 200)}
+                  {renderSettingSlider('Цветовой баланс', 'hue', -180, 180)}
+                </div>
+                <div>
+                  {renderSettingSlider('Резкость', 'sharpness', 0, 100)}
+                  {renderSettingSlider('Тени', 'shadow', -100, 100)}
+                  {renderSettingSlider('Засветка', 'highlight', -100, 100)}
+                </div>
+              </div>
+
+              <div style={{ textAlign: 'center', marginTop: '15px' }}>
+                <button 
+                  onClick={() => setImageSettings({
+                    brightness: 100,
+                    contrast: 100,
+                    saturation: 100,
+                    sharpness: 0,
+                    hue: 0,
+                    shadow: 0,
+                    highlight: 0,
+                  })}
+                  style={{
+                    padding: '8px 15px',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Сбросить настройки
+                </button>
+              </div>
+            </div>
           </div>
         )}
-
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          marginTop: '20px',
-          flexWrap: 'wrap',
-          gap: '10px'
-        }}>
-          <button
-            onClick={handleCreateOrder}
+        
+        {/* Кнопка создания */}
+        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+          <button 
+            onClick={handleCreateOrder} 
             disabled={creating}
             style={{
               padding: '12px 30px',
@@ -419,7 +610,7 @@ const ImageRedactor = () => {
               color: creating ? '#666' : '#4CAF50',
               border: 'none',
               borderRadius: '4px',
-              cursor: creating ? 'not-allowed' : 'pointer',
+              cursor: (creating || !selectedFile) ? 'not-allowed' : 'pointer',
               fontSize: '16px',
               fontWeight: 'bold',
               boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
