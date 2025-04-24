@@ -63,12 +63,12 @@ const ImageRedactor = () => {
 
     const format = formats.find(f => f.name === printFormat);
     const scale = imageInfo.naturalWidth / imageInfo.displayedWidth;
-    
+
     // Рассчитываем реальные координаты и размеры обрезки
     const [displayWidth, displayHeight] = calculateCropSize(format.ratio);
     const realWidth = displayWidth * scale;
     const realHeight = displayHeight * scale;
-    
+
     // Проверяем, чтобы область обрезки не выходила за границы изображения
     const maxX = imageInfo.naturalWidth - realWidth;
     const maxY = imageInfo.naturalHeight - realHeight;
@@ -79,9 +79,9 @@ const ImageRedactor = () => {
     const canvas = document.createElement('canvas');
     canvas.width = realWidth;
     canvas.height = realHeight;
-    
+
     const ctx = canvas.getContext('2d');
-    
+
     // Применяем фильтры к изображению
     ctx.filter = `
       brightness(${imageSettings.brightness}%)
@@ -89,7 +89,7 @@ const ImageRedactor = () => {
       saturate(${imageSettings.saturation}%)
       hue-rotate(${imageSettings.hue}deg)
     `;
-    
+
     ctx.drawImage(
       imageRef.current,
       realX, realY,          // Начальные координаты обрезки
@@ -104,22 +104,22 @@ const ImageRedactor = () => {
       shadowHighlightCanvas.width = realWidth;
       shadowHighlightCanvas.height = realHeight;
       const shCtx = shadowHighlightCanvas.getContext('2d');
-      
+
       shCtx.drawImage(canvas, 0, 0);
-      
+
       // Применяем тени и засветки
       if (imageSettings.shadow !== 0) {
         shCtx.globalCompositeOperation = 'multiply';
         shCtx.fillStyle = `rgba(0,0,0,${Math.abs(imageSettings.shadow)/100})`;
         shCtx.fillRect(0, 0, realWidth, realHeight);
       }
-      
+
       if (imageSettings.highlight !== 0) {
         shCtx.globalCompositeOperation = 'screen';
         shCtx.fillStyle = `rgba(255,255,255,${Math.abs(imageSettings.highlight)/100})`;
         shCtx.fillRect(0, 0, realWidth, realHeight);
       }
-      
+
       shCtx.globalCompositeOperation = 'source-over';
       ctx.clearRect(0, 0, realWidth, realHeight);
       ctx.drawImage(shadowHighlightCanvas, 0, 0);

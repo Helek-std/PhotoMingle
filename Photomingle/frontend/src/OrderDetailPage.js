@@ -11,6 +11,12 @@ const OrderDetailPage = () => {
 
   const token = localStorage.getItem('access_token');
 
+  const STATUS_TRANSLATIONS = {
+  in_work: 'В работе',
+  in_creation: 'Создается',
+  ready: 'Готов',
+  };
+
   useEffect(() => {
     fetchOrderDetails();
   }, [orderId]);
@@ -46,7 +52,7 @@ const OrderDetailPage = () => {
       });
 
       if (!response.ok) throw new Error('Ошибка при удалении изображения');
-      fetchOrderDetails(); // Обновить данные после удаления
+      fetchOrderDetails();
     } catch (err) {
       console.error(err);
     }
@@ -110,10 +116,24 @@ const OrderDetailPage = () => {
               marginBottom: '30px'
             }}>
               <h3 style={{ marginTop: 0 }}>{order.name}</h3>
-              <p><strong>Ссылка для приглашения:</strong> <a href={order.shortcut_url} style={{ color: '#4CAF50' }}>{order.shortcut_url}</a></p>
-              <p><strong>Статус:</strong> {order.status}</p>
-
-              {/* Добавляем отображение стоимости заказа */}
+              <p>
+                <strong>Ссылка для приглашения:</strong>{' '}
+                <span
+                  onClick={() => {
+                    const fullUrl = `${window.location.origin}/orders/invite/${order.shortcut_url}`;
+                    navigator.clipboard.writeText(fullUrl);
+                      alert('Ссылка скопирована в буфер обмена');
+                  }}
+                  style={{
+                    color: '#4CAF50',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  {`${window.location.origin}/orders/invite/${order.shortcut_url}`}
+                </span>
+              </p>
+              <p><strong>Статус:</strong> {STATUS_TRANSLATIONS[order.status] || order.status}</p>
               <p style={{ fontSize: '1.2rem', marginTop: '10px', color: '#333' }}>
                 <strong>Общая стоимость:</strong> {order.total_price} ₽
               </p>

@@ -41,9 +41,10 @@ class CustomAuthentication(JWTAuthentication):
             return None
         try:
             validated_token = self.get_validated_token(raw_token)
-        except InvalidToken:
-            return None
-        return self.get_user(validated_token), validated_token
+            return self.get_user(validated_token), validated_token
+        except:
+            return None, None
+
     
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated)

@@ -99,7 +99,8 @@ class OrderDetailView(APIView):
 
         uuid = order_id.replace("order-", "")
         order = get_object_or_404(Order, Q(id=uuid) & (Q(owner=user) | Q(guest_users__in=[user])))
-
+        if order.status != OrderStatus.IN_CREATION:
+            return Response({"detail": "Order not found or access denied"}, status=403)
         image_obj = Image.objects.filter(id=image_id, order=order).first()
         if not image_obj:
             return Response({"detail": "Image not found or does not belong to this order."},
@@ -159,8 +160,10 @@ class AddImage(APIView):
                 Q(id=uuid) & (Q(owner=user) | Q(guest_users__in=[user]))
             )
         except Exception:
-            return Response({"detail": "Order not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Order status is not in creation"}, status=403)
 
+        if order.status != OrderStatus.IN_CREATION:
+            return Response({"detail": "Order not found or access denied"}, status=403)
         order_serializer = OrderSerializer(order)
         formats = PrintFormat.objects.all()
         formats_serializer = PrintFormatSerializer(formats, many=True)
@@ -170,11 +173,14 @@ class AddImage(APIView):
             "print_formats": formats_serializer.data
         })
 
+
+
     def put(self, request, order_id):
         user = request.user
         uuid = order_id.replace("order-", "")
         order = get_object_or_404(Order, Q(id=uuid) & (Q(owner=user) | Q(guest_users__in=[user])))
-
+        if order.status != OrderStatus.IN_CREATION:
+            return Response({"detail": "Order not found or access denied"}, status=403)
         image_file = request.FILES.get('image')
         if not image_file:
             return Response({"detail": "No image file provided."}, status=400)
