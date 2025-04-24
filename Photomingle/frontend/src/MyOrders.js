@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const MyOrdersPage = () => {
   const [orders, setOrders] = useState([]);
@@ -8,6 +8,31 @@ const MyOrdersPage = () => {
   const [error, setError] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newName, setNewName] = useState('');
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      // Отправляем запрос на сервер для выхода
+      const response = await fetch('/api/users/logout/', {
+        method: 'GET',
+        credentials: 'include', // Важно для работы с cookies
+      });
+
+      if (response.ok) {
+        // Удаляем токен из localStorage
+        localStorage.removeItem('access_token');
+        // Перенаправляем на страницу входа
+        navigate('/login');
+      } else {
+        throw new Error('Logout failed');
+      }
+    } catch (err) {
+      console.error('Logout error:', err);
+      // В любом случае очищаем токен и перенаправляем
+      localStorage.removeItem('access_token');
+      navigate('/login');
+    }
+  };
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -89,8 +114,39 @@ const MyOrdersPage = () => {
 
   return (
     <div style={{ backgroundColor: '#fff', minHeight: '100vh', padding: '40px', color: '#333' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-        <h2 style={{ textAlign: 'center', fontSize: '2rem', marginBottom: '30px', color: '#4CAF50' }}>
+      <div style={{ 
+        maxWidth: '900px', 
+        margin: '0 auto',
+        position: 'relative'  // Добавляем relative для позиционирования кнопки
+      }}>
+        {/* Кнопка Logout теперь внутри основного контейнера */}
+        <button
+          onClick={handleLogout}
+          style={{
+            position: 'absolute',
+            top: '0',
+            right: '0',
+            padding: '8px 16px',
+            backgroundColor: '#f44336',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+            transform: 'translateY(-50%)' // Слегка поднимаем кнопку вверх
+          }}
+        >
+          Выйти
+        </button>
+
+        <h2 style={{ 
+          textAlign: 'center', 
+          fontSize: '2rem', 
+          marginBottom: '30px', 
+          color: '#4CAF50',
+          paddingTop: '20px'  // Добавляем отступ сверху для кнопки
+        }}>
           Мои заказы
         </h2>
 
