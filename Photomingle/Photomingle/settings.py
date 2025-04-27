@@ -14,6 +14,8 @@ import os
 from datetime import timedelta
 from pathlib import Path
 from dotenv import load_dotenv
+import django
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,9 +35,9 @@ SECRET_KEY = os.environ.get(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DJANGO_DEBUG", "") != "False"
 
-DJANGO_ALLOWED_HOST = os.environ.get("DJANGO_HOST", "")
+DJANGO_ALLOWED_HOST = os.environ.get("DJANGO_HOST", "127.0.0.1")
 ALLOWED_HOSTS = (
-    [DJANGO_ALLOWED_HOST, "127.0.0.1"] if len(DJANGO_ALLOWED_HOST) != 0 else []
+    [DJANGO_ALLOWED_HOST] if len(DJANGO_ALLOWED_HOST) != 0 else []
 )
 
 
@@ -55,7 +57,9 @@ INSTALLED_APPS = [
     "users",
     "orders",
     "corsheaders",
+    "storages"
 ]
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "users.authenticate.CustomAuthentication",  # Для JWT
@@ -72,6 +76,39 @@ SIMPLE_JWT = {
     "AUTH_COOKIE_PATH": "/",  # The path of the auth cookie.
     "AUTH_COOKIE_SAMESITE": "Lax",  # Whether to set the flag restricting cookie leaks on cross-site requests.
 }
+
+USE_S3 = os.getenv('USE_S3') == 'True'
+STATICFILES_LOCATION = 'static'
+MEDIAFILES_LOCATION = 'media'
+
+if USE_S3:
+    if django.get_version() <= "4.2.0":
+        # Storage definition
+        DEFAULT_FILE_STORAGE = 'Photomingle.cloud.MediaStorage'
+        STATICFILES_STORAGE = 'Photomingle.cloud.StaticStorage'
+    else:
+        STORAGES = {
+            'default': {
+                'BACKEND': 'Photomingle.cloud.MediaStorage',
+            },
+            'staticfiles': {
+                'BACKEND': 'Photomingle.cloud.StaticStorage',
+            },
+        }
+
+    AWS_S3_ENDPOINT_URL = 'https://storage.yandexcloud.net'
+    AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_S3_BUCKET_NAME", "photomingle")
+    AWS_S3_ACCESS_KEY_ID = os.environ.get('AWS_S3_ACCESS_KEY_ID')
+    AWS_S3_SECRET_ACCESS_KEY = os.environ.get('AWS_S3_SECRET_ACCESS_KEY')
+    AWS_S3_REGION = os.environ.get("AWS_S3_REGION_NAME", "ru-central1")
+    AWS_QUERYSTRING_AUTH = False
+    STATIC_URL = f"{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/{STATICFILES_LOCATION}/"
+    MEDIA_URL = f"{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/{MEDIAFILES_LOCATION}/"
+else:
+    STATIC_ROOT = BASE_DIR / STATICFILES_LOCATION
+    MEDIA_ROOT = BASE_DIR / MEDIAFILES_LOCATION
+    STATIC_URL = "/static/"
+    MEDIA_URL = "/media/"
 
 STATICFILES_DIRS = [
     BASE_DIR / "frontend/build/static",
@@ -132,7 +169,8 @@ DATABASES = (
         }
     }
     if not DEBUG
-    else {
+    else 
+    {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
@@ -171,13 +209,6 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-STATIC_ROOT = BASE_DIR / "static"
-STATIC_URL = "/static/"
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
