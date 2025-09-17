@@ -31,7 +31,8 @@ SECRET_KEY = os.environ.get(
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DJANGO_DEBUG", "") != "False"
+#DEBUG = os.environ.get("DJANGO_DEBUG", "") != "False"
+DEBUG = True
 
 DJANGO_ALLOWED_HOST = os.environ.get("DJANGO_HOST", "")
 ALLOWED_HOSTS = (
@@ -51,15 +52,20 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
     "webpack_loader",
     "users",
     "orders",
     "corsheaders",
+
 ]
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "users.authenticate.CustomAuthentication",  # Для JWT
     ],
+    "DEFAULT_RENDERER_CLASSES": (
+         'rest_framework.renderers.JSONRenderer',
+     )
 }
 
 SIMPLE_JWT = {
@@ -124,7 +130,7 @@ WSGI_APPLICATION = "Photomingle.wsgi.application"
 DATABASES = (
     {
         "default": {
-            "ENGINE": "django.db.backends.mysql",
+            "ENGINE": "django.db.backends.postgress",
             "NAME": os.environ.get("DB_NAME"),
             "USER": os.environ.get("DB_USER"),
             "PASSWORD": os.environ.get("DB_PASSWORD"),
@@ -133,10 +139,14 @@ DATABASES = (
     }
     if not DEBUG
     else {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
+        'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'PhotoMingle_db',
+        'USER': 'test',
+        'PASSWORD': 'qweqwe',
+        'HOST': 'localhost',
+        'PORT': 5432,
+    }
     }
 )
 

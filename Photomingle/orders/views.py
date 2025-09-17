@@ -2,6 +2,7 @@ import hashlib
 import os
 import uuid
 
+from django.contrib.postgres.search import TrigramSimilarity
 from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.views import APIView
@@ -9,7 +10,7 @@ from rest_framework.response import Response
 from .authenticate import IsAuthenticatedViaJWT
 from django.db.models import Q, Sum, F
 from .models import Order, OrderStatus, Image, PrintFormat
-from .serializers import OrderSerializer, ImageSerializer, PrintFormatSerializer
+from .serializers import OrderSerializer, ImageSerializer, PrintFormatSerializer, OrderListSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 class MyOrdersView(APIView):
@@ -22,9 +23,22 @@ class MyOrdersView(APIView):
 
     def get(self, request):
         user = request.user
-        orders = Order.objects.filter(Q(owner=user) | Q(guest_users__in=[user])).distinct()
+        search_query = request.GET.get("search", "")
+
+        orders = Order.objects.filter(
+            Q(owner=user) | Q(guest_users__in=[user])
+        ).distinct()
+
+        if search_query:
+            orders = (
+                orders.annotate(similarity=TrigramSimilarity("name", search_query))
+                .filter(similarity__gt=0.2)
+                .order_by("-similarity")
+            )
+
         order_ids = [f"order-{order.id}" for order in orders]
         order_names = [order.name for order in orders]
+
         return Response({
             "order_ids": order_ids,
             "order_names": order_names

@@ -9,6 +9,8 @@ const MyOrdersPage = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newName, setNewName] = useState('');
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
 
   const handleLogout = async () => {
     try {
@@ -28,46 +30,54 @@ const MyOrdersPage = () => {
       }
     } catch (err) {
       console.error('Logout error:', err);
-      // В любом случае очищаем токен и перенаправляем
       localStorage.removeItem('access_token');
       navigate('/login');
     }
   };
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    const token = localStorage.getItem('access_token');
+    const fetchOrders = async (query = '') => {
+        setLoading(true);
+        const token = localStorage.getItem('access_token');
 
-    if (!token) {
-      setError('Токен не найден. Пожалуйста, войдите в систему.');
-      setLoading(false);
-      return;
-    }
+        if (!token) {
+            setError('Токен не найден. Пожалуйста, войдите в систему.');
+            setLoading(false);
+            return;
+        }
 
-    try {
-      const response = await fetch('/api/orders/', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+        try {
+            const url = query ? `/api/orders/?search=${encodeURIComponent(query)}` : '/api/orders/';
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+            });
 
-      if (!response.ok) throw new Error(`Ошибка ${response.status}`);
-      const data = await response.json();
+            if (!response.ok) throw new Error(`Ошибка ${response.status}`);
+            const data = await response.json();
 
-      const combined = data.order_ids.map((id, index) => ({
-        id,
-        name: data.order_names[index],
-      }));
+            const combined = data.order_ids.map((id, index) => ({
+                id,
+                name: data.order_names[index],
+            }));
 
-      setOrders(combined);
-    } catch (err) {
-      setError(`Не удалось загрузить заказы: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
+            setOrders(combined);
+        } catch (err) {
+            setError(`Не удалось загрузить заказы: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedSearch(searchQuery), 500);
+        return () => clearTimeout(handler);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        fetchOrders(debouncedSearch);
+    }, [debouncedSearch]);
 
   useEffect(() => {
     fetchOrders();
@@ -117,9 +127,8 @@ const MyOrdersPage = () => {
       <div style={{ 
         maxWidth: '900px', 
         margin: '0 auto',
-        position: 'relative'  // Добавляем relative для позиционирования кнопки
+        position: 'relative'
       }}>
-        {/* Кнопка Logout теперь внутри основного контейнера */}
         <button
           onClick={handleLogout}
           style={{
@@ -145,7 +154,7 @@ const MyOrdersPage = () => {
           fontSize: '2rem', 
           marginBottom: '30px', 
           color: '#4CAF50',
-          paddingTop: '20px'  // Добавляем отступ сверху для кнопки
+          paddingTop: '20px'
         }}>
           Мои заказы
         </h2>
@@ -200,7 +209,20 @@ const MyOrdersPage = () => {
             </button>
           </div>
         )}
-
+          <div style={{ textAlign: 'center', margin: '20px 0' }}>
+              <input
+                  type="text"
+                  placeholder="Поиск по заказам..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                      padding: '10px',
+                      borderRadius: '4px',
+                      border: '1px solid #ccc',
+                      width: '60%',
+                  }}
+              />
+          </div>
         <div style={{
           marginTop: '30px',
           backgroundColor: 'white',
