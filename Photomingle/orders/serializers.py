@@ -1,6 +1,6 @@
 # serializers/serializers.py
 from rest_framework import serializers
-from .models import Order
+from .models import Order, Image
 
 
 class OrderSearchInputSerializer(serializers.Serializer):
@@ -20,3 +20,31 @@ class OrderOutputSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ["id", "name", "shortcut_url", "status"]
+
+
+class ImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Image
+        fields = ["id", "file", "preview"]
+
+
+class OrderDetailSerializer(serializers.ModelSerializer):
+    images = ImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "name",
+            "shortcut_url",
+            "status",
+            "images",
+        ]
+
+
+class DeleteImageInputSerializer(serializers.Serializer):
+    image_id = serializers.UUIDField()
+
+
+class CompleteOrderInputSerializer(serializers.Serializer):
+    confirm = serializers.BooleanField(default=True)

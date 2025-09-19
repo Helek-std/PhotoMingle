@@ -30,7 +30,37 @@ export const ordersApi = createApi({
                 body: newOrder,
             }),
         }),
+        getOrderById: builder.query({
+            query: (orderId) => ({
+                url: `/orders/${orderId}/`,
+                method: "GET",
+            }),
+            providesTags: (result, error, orderId) => [{ type: "Order", id: orderId }],
+        }),
+
+        deleteOrderImage: builder.mutation({
+            query: ({ orderId, imageId }) => ({
+                url: `/orders/${orderId}/`,
+                method: "DELETE",
+                body: { image_id: imageId },
+            }),
+            invalidatesTags: (result, error, { orderId }) => [{ type: "Order", id: orderId }],
+        }),
+
+        completeOrder: builder.mutation({
+            query: (orderId) => ({
+                url: `/orders/${orderId}/`,
+                method: "POST",
+            }),
+            invalidatesTags: (result, error, orderId) => [{ type: "Order", id: orderId }],
+        }),
     }),
 })
 
-export const { useGetOrdersQuery, useLazyGetOrdersQuery, useCreateOrderMutation } = ordersApi
+export const {
+    useGetOrdersQuery,
+    useCreateOrderMutation,
+    useGetOrderByIdQuery,
+    useDeleteOrderImageMutation,
+    useCompleteOrderMutation,
+} = ordersApi;

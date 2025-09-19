@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {useLoginMutation, useTwoFactorAuthMutation} from "./services/userApi";
+import {useLoginMutation, useTwoFactorAuthMutation} from "./services/usersApi";
 
 const LoginPage = () => {
     const [email, setEmail] = useState('')

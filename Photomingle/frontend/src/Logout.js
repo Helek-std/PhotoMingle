@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {useLogoutMutation} from "./services/userApi";
+import {useLogoutMutation} from "./services/usersApi";
 
 const Logout = () => {
     const navigate = useNavigate();

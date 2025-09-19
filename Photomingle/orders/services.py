@@ -2,6 +2,8 @@
 import hashlib, uuid
 from django.db.models import Q
 from django.contrib.postgres.search import TrigramSimilarity
+from django.shortcuts import get_object_or_404
+
 from .models import Order, OrderStatus
 
 
@@ -33,3 +35,20 @@ def create_order(user, name):
         shortcut_url=generate_shortcut_url(),
         status=OrderStatus.IN_CREATION
     )
+
+def get_order_detail(order_id, user):
+    return get_object_or_404(Order.objects.prefetch_related("images"), id=order_id, owner=user)
+
+
+def delete_order_image(order_id, image_id, user):
+    order = get_object_or_404(Order, id=order_id, owner=user)
+    image = get_object_or_404(order.images, id=image_id)
+    image.delete()
+    return order
+
+
+def complete_order(order_id, user):
+    order = get_object_or_404(Order, id=order_id, owner=user)
+    order.status = OrderStatus.READY
+    order.save()
+    return order
