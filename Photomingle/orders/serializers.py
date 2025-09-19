@@ -1,22 +1,22 @@
+# serializers/serializers.py
 from rest_framework import serializers
-from .models import Order, Image, PrintFormat
+from .models import Order
 
 
-class PrintFormatSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = PrintFormat
-        fields = ['id', 'name', 'width_mm', 'height_mm', 'price']
+class OrderSearchInputSerializer(serializers.Serializer):
+    search = serializers.CharField(required=False, allow_blank=True)
 
-class ImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Image
-        fields = ['id', 'file', 'preview']
 
-class OrderSerializer(serializers.ModelSerializer):
-    images = ImageSerializer(many=True, read_only=True)
-    owner = serializers.StringRelatedField()
-    guest_users = serializers.StringRelatedField(many=True)
+class OrderListOutputSerializer(serializers.Serializer):
+    order_ids = serializers.ListField(child=serializers.CharField())
+    order_names = serializers.ListField(child=serializers.CharField())
 
+
+class OrderCreateInputSerializer(serializers.Serializer):
+    name = serializers.CharField(required=True, max_length=255)
+
+
+class OrderOutputSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['id', 'name', 'owner', 'guest_users', 'status', 'shortcut_url', 'images']
+        fields = ["id", "name", "shortcut_url", "status"]
