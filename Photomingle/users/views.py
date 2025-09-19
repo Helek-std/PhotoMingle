@@ -1,152 +1,91 @@
-from django.http import JsonResponse
-from django.shortcuts import render
-from django.contrib.auth import authenticate
-from rest_framework import status
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.response import Response
+# users/views.py
 from rest_framework.views import APIView
-
-from .otp import EmailSender
-from .models import CustomUser
-from django.conf import settings
+from rest_framework.response import Response
+from rest_framework import status
 from django.middleware import csrf
+from django.conf import settings
+
+from .serializers import (
+    RegisterInputSerializer, RegisterOutputSerializer,
+    LoginInputSerializer, LoginOutputSerializer,
+    LogoutOutputSerializer, TwoFactorInputSerializer,
+    TokenOutputSerializer
+)
+from .services import register_user, login_user, logout_user, verify_two_factor
 from .authenticate import CustomAuthentication
 
-def get_tokens_for_user(user):
-    refresh = RefreshToken.for_user(user)
-        
-    return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    }
 
 class RegisterView(APIView):
-    def get(self, request):
-        return render(request, "index.html")
-
     def post(self, request):
-        email: str = request.data.get("email")
-        password: str = request.data.get("password")
+        serializer = RegisterInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        normalized_email = email.lower()
-        existing_user = CustomUser.objects.filter(email=normalized_email).exists()
-        if existing_user:
-            return Response(
-                {"error": "Пользователь с таким email уже существует"},
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        user = CustomUser.objects.create_user(email=email, password=password)
-        user.save()
-        if not settings.DEBUG:
-            otp_email = EmailSender(normalized_email)
-            if not otp_email.send_mail():
-                return Response(
-                    {"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED
-                )
-            else:
-                return Response(
-                     {"message": "Server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-        return Response(
-            {"message": "Введите код из письма"}, status=status.HTTP_202_ACCEPTED
+        user, message = register_user(
+            serializer.validated_data["email"],
+            serializer.validated_data["password"]
         )
+        if not user and "существует" in message:
+            return Response({"error": message}, status=status.HTTP_409_CONFLICT)
+        if not user:
+            return Response({"message": message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({"message": message}, status=status.HTTP_202_ACCEPTED)
 
 
 class LoginView(APIView):
-    def get(self, request):
-        return render(request, "index.html")
-
     def post(self, request):
-        email = request.data.get("email")
-        password = request.data.get("password")
+        serializer = LoginInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        user = authenticate(email=email, password=password)
-        if user is not None:
-            if not settings.DEBUG:
-                otp_email = EmailSender(email.lower())
-                if not otp_email.send_mail():
-                    return Response(
-                        {"message": "Enter code from email"}, status=status.HTTP_202_ACCEPTED
-                    )
-                else:
-                    return Response(
-                         {"message": "Server error"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                    )
-            else:
-                return Response(
-                    {"message": "Enter code from email"}, status=status.HTTP_202_ACCEPTED
-                )
-        return Response(
-            {"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
+        user, message = login_user(
+            serializer.validated_data["email"],
+            serializer.validated_data["password"]
         )
+        if not user and "Неверные" in message:
+            return Response({"error": message}, status=status.HTTP_401_UNAUTHORIZED)
+        if not user:
+            return Response({"message": message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({"message": message}, status=status.HTTP_202_ACCEPTED)
 
 
 class LogoutView(APIView):
     authentication_classes = [CustomAuthentication]
 
     def get(self, request):
-        try:
-            refresh_token = request.COOKIES.get("refresh_token")
-            if not refresh_token:
-                return Response(
-                    {"error": "No refresh token provided"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        refresh_token = request.COOKIES.get("refresh_token")
+        if not refresh_token:
+            return Response({"error": "No refresh token provided"}, status=status.HTTP_400_BAD_REQUEST)
 
-            token = RefreshToken(refresh_token)
-            token.blacklist()
+        success, message = logout_user(refresh_token)
+        if not success:
+            return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response(
-                {"message": "Logout successful"}, status=status.HTTP_205_RESET_CONTENT
-            )
-        except Exception:
-            return Response(
-                {"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        return Response({"message": message}, status=status.HTTP_205_RESET_CONTENT)
 
 
 class TwoFactorAuthView(APIView):
     def post(self, request):
-        email = request.data.get("email")
-        code = request.data.get("code")
+        serializer = TwoFactorInputSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        response = Response()
-        if not email or not code:
-            return JsonResponse({"error": "Email и код обязательны"}, status=400)
+        tokens, error = verify_two_factor(
+            serializer.validated_data["email"],
+            serializer.validated_data["code"]
+        )
+        if error:
+            return Response({"error": error}, status=status.HTTP_400_BAD_REQUEST)
 
+        response = Response(tokens, status=status.HTTP_200_OK)
 
-        if not settings.DEBUG:
-            new_otp = EmailSender(email.lower())
-            if not new_otp.verify(code):
-                return JsonResponse({"error": "Неверный код или код истек"}, status=400)
-
-        try:
-            user = CustomUser.objects.get(email=email)
-        except:
-            return JsonResponse({"error": "Пользователь не найден"}, status=400)
-
-        tokens = get_tokens_for_user(user)
-        access_token = str(tokens['access'])
-        
         response.set_cookie(
-            key = settings.SIMPLE_JWT['AUTH_COOKIE'], 
-            value = access_token,
-            expires = settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'],
-            secure = settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
-            httponly = settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
-            samesite = settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
+            key=settings.SIMPLE_JWT["AUTH_COOKIE"],
+            value=tokens["access"],
+            expires=settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"],
+            secure=settings.SIMPLE_JWT["AUTH_COOKIE_SECURE"],
+            httponly=settings.SIMPLE_JWT["AUTH_COOKIE_HTTP_ONLY"],
+            samesite=settings.SIMPLE_JWT["AUTH_COOKIE_SAMESITE"],
         )
         csrf.get_token(request)
 
-        response.data = {
-                "access_token": access_token,
-                "refresh_token": str(tokens["refresh"]),
-        }
-
-        response.status_code = 200
         return response
-
-    def get(self, request):
-        return render(request, "index.html")

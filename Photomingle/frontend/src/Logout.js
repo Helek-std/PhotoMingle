@@ -1,24 +1,26 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {useLogoutMutation} from "./services/userApi";
 
 const Logout = () => {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
+    const [logout] = useLogoutMutation();
 
-  useEffect(() => {
-    // Очистка токенов
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
+    useEffect(() => {
+        const doLogout = async () => {
+            try {
+                await logout().unwrap();
+            } catch (err) {
+                console.error("Ошибка при logout:", err);
+            } finally {
+                setTimeout(() => navigate("/"), 1500);
+            }
+        };
 
-    // Запрос на сервер для выхода (необязательно, но можно добавить)
-    fetch("/api/logout/", {
-      method: "GET", // Можно оставить POST, если на бэке останется POST
-      credentials: "include",
-    }).finally(() => {
-      setTimeout(() => navigate("/"), 2000); // Перенаправление на главную через 2 секунды
-    });
-  }, [navigate]);
+        doLogout();
+    }, [logout, navigate]);
 
-  return <h2>Вы вышли из аккаунта</h2>;
+    return <h2>Вы вышли из аккаунта...</h2>;
 };
 
 export default Logout;
