@@ -48,3 +48,4 @@ class DeleteImageInputSerializer(serializers.Serializer):
 
 class CompleteOrderInputSerializer(serializers.Serializer):
     confirm = serializers.BooleanField(default=True)
+

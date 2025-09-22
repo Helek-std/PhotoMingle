@@ -7,9 +7,9 @@ const TwoFactorAuth = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const email = location.state?.email; // Получаем email из state
+  const email = location.state?.email;
   if (!email) {
-    navigate("/login"); // Если email нет, редиректим на логин
+    navigate("/login");
   }
 
   const handleSubmit = async (e) => {
@@ -29,7 +29,7 @@ const TwoFactorAuth = () => {
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("refresh_token", data.refresh_token);
 
-        navigate("/orders");
+        navigate("/");
       } else {
         setError(data.error || "Неверный код!");
       }

@@ -24,7 +24,7 @@ const LoginPage = () => {
     const handleVerify = async () => {
         try {
             await twoFactorAuth({ email, code: otp }).unwrap()
-            navigate('/orders') // редирект после входа
+            navigate('/')
         } catch (err) {
             alert(err.data?.error || 'Ошибка верификации')
         }

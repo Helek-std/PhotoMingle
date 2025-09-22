@@ -8,18 +8,21 @@ import Logout from "./Logout";
 import OrderDetailPage from "./OrderDetailPage"
 import InvitedOrderPage from "./InvitedOrderPage"
 import ImageRedactor from "./ImageRedactor"
-
+import MonitorPage from "./MonitorPage";
+import HomePage from "./HomePage";
 const App = () => {
   return (
     <Router>
       <Routes>
+        <Route path="/" element={<HomePage/>} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/2fa" element={<TwoFactorAuth />} />
         <Route path="/orders" element={<MyOrders />} />
         <Route path="/orders/:orderId" element={<OrderDetailPage />} />
         <Route path="/orders/invite/:shortcut_url" element={<InvitedOrderPage />} />
-	<Route path="/orders/:orderId/addImage" element={<ImageRedactor />} />
+          <Route path="/monitor" element={<MonitorPage />} />
+	    <Route path="/orders/:orderId/addImage" element={<ImageRedactor />} />
         <Route path="/logout" element={<Logout />} />
       </Routes>
     </Router>

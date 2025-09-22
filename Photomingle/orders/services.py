@@ -52,3 +52,4 @@ def complete_order(order_id, user):
     order.status = OrderStatus.READY
     order.save()
     return order
+

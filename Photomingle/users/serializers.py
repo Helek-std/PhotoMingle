@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from .models import CustomUser
+
 
 class RegisterInputSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -15,10 +17,6 @@ class LoginInputSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
 
-class LoginOutputSerializer(serializers.Serializer):
-    message = serializers.CharField()
-
-
 class LogoutOutputSerializer(serializers.Serializer):
     message = serializers.CharField()
 
@@ -31,3 +29,10 @@ class TwoFactorInputSerializer(serializers.Serializer):
 class TokenOutputSerializer(serializers.Serializer):
     access_token = serializers.CharField()
     refresh_token = serializers.CharField()
+
+
+
+class MyInfoOutputSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ["id", "email", "role", "avatar"]

@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate
+from django.shortcuts import get_object_or_404
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from .models import CustomUser
@@ -65,5 +66,7 @@ def verify_two_factor(email: str, code: str):
     except CustomUser.DoesNotExist:
         return None, "Пользователь не найден"
 
-    tokens = get_tokens_for_user(user)
-    return tokens, None
+    return user, None
+
+def get_user_info(user_id):
+    return get_object_or_404(CustomUser, id=user_id)

@@ -57,12 +57,10 @@ INSTALLED_APPS = [
     "users",
     "orders",
     "corsheaders",
+    "monitor"
 
 ]
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": [
-        "users.authenticate.CustomAuthentication",  # Для JWT
-    ],
     "DEFAULT_RENDERER_CLASSES": (
          'rest_framework.renderers.JSONRenderer',
      )
