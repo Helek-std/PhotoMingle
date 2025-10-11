@@ -3,12 +3,14 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
+from .models import PrintFormat
 from .services import get_user_orders, create_order, delete_order_image, complete_order, get_order_detail
 from .serializers import (
     OrderSearchInputSerializer,
     OrderListOutputSerializer,
     OrderCreateInputSerializer,
     OrderOutputSerializer, DeleteImageInputSerializer, CompleteOrderInputSerializer, OrderDetailSerializer,
+    PrintFormatSerializer,
 )
 
 class OrderListView(APIView):
@@ -73,3 +75,10 @@ class OrderCompleteView(APIView):
             status=status.HTTP_200_OK,
         )
 
+class FormatsView(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        formats = PrintFormat.objects.all()
+        serializer = PrintFormatSerializer(formats, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

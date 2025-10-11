@@ -15,7 +15,7 @@ import { motion } from 'framer-motion'
 import { styled } from '@mui/system'
 import {useLogoutMutation, useMyInfoQuery} from "./services/usersApi";
 import PersonIcon from '@mui/icons-material/Person';
-import {useNavigate} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 
 const GlitchText = styled(motion.div)(({ theme }) => ({
     position: 'relative',
@@ -39,17 +39,26 @@ const pages = ['Главная', 'Мои заказы', 'Админ-панель
 const settings = ['Профиль', 'Выход']
 
 export default function ResponsiveAppBar() {
+    const location = useLocation();
     const [anchorElNav, setAnchorElNav] = React.useState(null);
     const [anchorElUser, setAnchorElUser] = React.useState(null);
-    const [selected, setSelected] = React.useState('Главная');
+
+    const pathToPageMap: Record<string, string> = {
+        '/': 'Главная',
+        '/orders': 'Мои заказы',
+        '/admin': 'Админ-панель',
+    };
+
+    const currentPage = pathToPageMap[location.pathname] || 'Главная';
+    const [selected, setSelected] = React.useState(currentPage);
     const navigate = useNavigate();
     const [logout] = useLogoutMutation();
     const settingsActions = [
         () => navigate("/profile"),
         async () => {
             try {
-                await logout().unwrap();
-                navigate("/login");
+                await logout({all:false}).unwrap();
+                refetch();
             } catch (e) {
                 console.error("Ошибка при выходе", e);
             }
@@ -68,8 +77,24 @@ export default function ResponsiveAppBar() {
         setAnchorElUser(event.currentTarget);
     };
 
-    const handleCloseNavMenu = (page) => {
-        if (page) setSelected(page);
+    const handleCloseNavMenu = (page?: string) => {
+        if (page) {
+            setSelected(page);
+
+            switch (page) {
+                case 'Главная':
+                    navigate('/');
+                    break;
+                case 'Мои заказы':
+                    navigate('/orders');
+                    break;
+                case 'Админ-панель':
+                    navigate('/admin');
+                    break;
+                default:
+                    break;
+            }
+        }
         setAnchorElNav(null);
     };
 
@@ -78,7 +103,7 @@ export default function ResponsiveAppBar() {
     };
 
     return (
-        <AppBar position="static" sx={{ background: '#111' }}>
+        <AppBar position="static" sx={{ background: '#111', width:"100%"}}>
             <Container maxWidth="xl">
                 <Toolbar disableGutters sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <GlitchText style={{ marginRight: '16px', display: 'flex' }}>Photomingle</GlitchText>

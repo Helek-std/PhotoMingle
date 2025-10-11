@@ -54,6 +54,9 @@ export const ordersApi = createApi({
             }),
             invalidatesTags: (result, error, orderId) => [{ type: "Order", id: orderId }],
         }),
+        getPrintFormats: builder.query({
+            query: () => 'formats/',
+        }),
     }),
 })
 
@@ -63,4 +66,5 @@ export const {
     useGetOrderByIdQuery,
     useDeleteOrderImageMutation,
     useCompleteOrderMutation,
+    useGetPrintFormatsQuery
 } = ordersApi;

@@ -36,7 +36,7 @@ DEBUG = True
 
 DJANGO_ALLOWED_HOST = os.environ.get("DJANGO_HOST", "")
 ALLOWED_HOSTS = (
-    [DJANGO_ALLOWED_HOST, "127.0.0.1"] if len(DJANGO_ALLOWED_HOST) != 0 else []
+    [DJANGO_ALLOWED_HOST, "127.0.0.1", "localhost"] if len(DJANGO_ALLOWED_HOST) != 0 else []
 )
 
 
@@ -49,10 +49,11 @@ INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
-    "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.postgres",
+    "django.contrib.sessions",
+    "user_sessions",
     "webpack_loader",
     "users",
     "orders",
@@ -64,17 +65,6 @@ REST_FRAMEWORK = {
     "DEFAULT_RENDERER_CLASSES": (
          'rest_framework.renderers.JSONRenderer',
      )
-}
-
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),  # Жизнь access-токена
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),  # Жизнь refresh-токена
-    "AUTH_COOKIE": "access_token",  # Cookie name. Enables cookies if value is set.
-    "AUTH_COOKIE_DOMAIN": None,  # A string like "example.com", or None for standard domain cookie.
-    "AUTH_COOKIE_SECURE": False,  # Whether the auth cookies should be secure (https:// only).
-    "AUTH_COOKIE_HTTP_ONLY": True,  # Http only cookie flag.It's not fetch by javascript.
-    "AUTH_COOKIE_PATH": "/",  # The path of the auth cookie.
-    "AUTH_COOKIE_SAMESITE": "Lax",  # Whether to set the flag restricting cookie leaks on cross-site requests.
 }
 
 STATICFILES_DIRS = [
@@ -97,7 +87,11 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "user_sessions.middleware.SessionMiddleware",
 ]
+
+
+#CSRF_COOKIE_SECURE = True
 
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -120,7 +114,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "Photomingle.wsgi.application"
-
+SESSION_ENGINE = "user_sessions.backends.db"
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases

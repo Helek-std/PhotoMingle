@@ -1,6 +1,6 @@
 # serializers/serializers.py
 from rest_framework import serializers
-from .models import Order, Image
+from .models import Order, Image, PrintFormat
 
 
 class OrderSearchInputSerializer(serializers.Serializer):
@@ -49,3 +49,8 @@ class DeleteImageInputSerializer(serializers.Serializer):
 class CompleteOrderInputSerializer(serializers.Serializer):
     confirm = serializers.BooleanField(default=True)
 
+
+class PrintFormatSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PrintFormat
+        fields = ['id', 'name', 'width_mm', 'height_mm', 'price']

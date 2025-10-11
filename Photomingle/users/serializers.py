@@ -16,6 +16,8 @@ class LoginInputSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
+class LogoutInputSerializer(serializers.Serializer):
+    all = serializers.BooleanField(default=False)
 
 class LogoutOutputSerializer(serializers.Serializer):
     message = serializers.CharField()
