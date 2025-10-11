@@ -30,11 +30,6 @@ export default function PricesPage() {
     return (
         <Box sx={{ p: 4 }}>
             <TableHeader searchValue={search} onSearchChange={setSearch}  onAdd={() => console.log("Добавить новый")}/>
-
-            <Typography variant="h5" sx={{ mb: 2 }}>
-                Прайсы
-            </Typography>
-
             <DataTable
                 columns={columns}
                 data={filteredPrices}

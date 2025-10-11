@@ -1,29 +1,73 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { Box, Typography } from "@mui/material";
-import DataTable from "./DataTable";
 import TableHeader from "./TableHeader";
-import ResponsiveAppBar from "./ResponsiveAppBar";
-
-const orders = [
-    { id: 1, product: "Печать А4", price: 150, status: "В обработке" },
-    { id: 2, product: "Печать А3", price: 250, status: "Готово" },
-];
+import DataTable from "./DataTable";
+import {useDeleteOrderMutation, useGetOrdersQuery} from "./services/ordersApi";
+import StatusModal from "./StatusModal";
+import DeleteOrderModal from "./DeleteOrderModal";
 
 export default function OrdersPage() {
     const [search, setSearch] = useState("");
+
+    const { data: orders = [], isLoading, isError } = useGetOrdersQuery({
+        search,
+        admin_request: true,
+    });
     const columns = [
-        { key: "product", label: "Товар" },
-        { key: "price", label: "Цена" },
-        { key: "status", label: "Статус" },
+        { key: "id", label: "ID" },
+        { key: "name", label: "Название" },
+        { key: "user", label: "Заказчик" },
+        { key: "status", label: "Статус"}
     ];
 
-    const handleEdit = (row: any) => console.log("Редактировать:", row);
-    const handleDelete = (row: any) => console.log("Удалить:", row);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [openModal, setOpenModal] = useState(false);
+
+    const handleEdit = (row) => {
+        setSelectedOrder(row);
+        setOpenModal(true);
+    };
+
+    const handleModalClose = (shouldRefetch) => {
+        setOpenModal(false);
+        setSelectedOrder(null);
+    };
+
+    const [selectedOrderToDelete, setSelectedOrderToDelete] = useState(null);
+    const [openDeleteModal, setOpenDeleteModal] = useState(false);
+
+    const handleDeleteClick = (row) => {
+        setSelectedOrderToDelete(row);
+        setOpenDeleteModal(true);
+    };
+
+    const handleDeleteModalClose = (deleted) => {
+        setOpenDeleteModal(false);
+        setSelectedOrderToDelete(null);
+    };
+
+    if (isLoading) return <Typography sx={{ p: 4 }}>Загрузка заказов...</Typography>;
+    if (isError) return <Typography sx={{ p: 4 }}>Ошибка загрузки заказов</Typography>;
 
     return (
         <Box sx={{ p: 4 }}>
-            <TableHeader searchValue={search} onSearchChange={setSearch}  onAdd={() => console.log("Добавить новый")}/>
-            <DataTable columns={columns} data={orders} onEdit={handleEdit} onDelete={handleDelete} />
+            <TableHeader
+                searchValue={search}
+                onSearchChange={setSearch}
+                onAdd={openModal}
+            />
+            <Typography variant="h5" sx={{ mb: 2 }}>
+                Заказы
+            </Typography>
+            <DataTable
+                columns={columns}
+                data={orders}
+                onEdit={handleEdit}
+                onDelete={handleDeleteClick}
+            />
+            <StatusModal open={openModal} onClose={handleModalClose} order={selectedOrder} />
+            <DeleteOrderModal open={openDeleteModal} onClose={handleDeleteModalClose} order={selectedOrderToDelete} />
         </Box>
+
     );
 }

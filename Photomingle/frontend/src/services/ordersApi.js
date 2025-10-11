@@ -1,27 +1,42 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 
+function getCookie(name: string) {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? match[2] : null;
+}
+
 export const ordersApi = createApi({
     reducerPath: 'ordersApi',
     baseQuery: fetchBaseQuery({
         baseUrl: '/api/',
         prepareHeaders: (headers) => {
-            const token = localStorage.getItem('access_token')
-            if (token) {
-                headers.set('Authorization', `Bearer ${token}`)
+            const csrfToken = getCookie("csrftoken");
+            if (csrfToken) {
+                headers.set("X-CSRFToken", csrfToken);
             }
-            return headers
-        }
+            return headers;
+        },
     }),
     endpoints: (builder) => ({
         getOrders: builder.query({
-            query: (search = '') =>
-                search ? `orders/?search=${encodeURIComponent(search)}` : 'orders/',
+            query: ({ search = '', admin_request = false } = {}) => {
+                let url = 'orders/';
+
+                const params = new URLSearchParams();
+                if (search) params.append('search', search);
+                if (admin_request) params.append('admin_request', 'true');
+
+                return `${url}?${params.toString()}`;
+            },
             transformResponse: (response) => {
                 return response.order_ids.map((id, idx) => ({
                     id,
-                    name: response.order_names[idx]
-                }))
-            }
+                    name: response.order_names[idx],
+                    user: response.order_users[idx],
+                    status: response.order_status[idx],
+                }));
+            },
+            providesTags: ['Orders'],
         }),
         createOrder: builder.mutation({
             query: (newOrder) => ({
@@ -40,22 +55,36 @@ export const ordersApi = createApi({
 
         deleteOrderImage: builder.mutation({
             query: ({ orderId, imageId }) => ({
-                url: `/orders/${orderId}/`,
+                url: `/orders/${orderId}/delete-image/`,
                 method: "DELETE",
                 body: { image_id: imageId },
             }),
-            invalidatesTags: (result, error, { orderId }) => [{ type: "Order", id: orderId }],
+            invalidatesTags: ['Orders'],
         }),
-
+        deleteOrder: builder.mutation({
+            query: (orderId) => ({
+                url: `/orders/delete/${orderId}/`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ['Orders'],
+        }),
         completeOrder: builder.mutation({
             query: (orderId) => ({
                 url: `/orders/${orderId}/`,
                 method: "POST",
             }),
-            invalidatesTags: (result, error, orderId) => [{ type: "Order", id: orderId }],
+            invalidatesTags: ["Orders"],
         }),
         getPrintFormats: builder.query({
             query: () => 'formats/',
+        }),
+        updateOrderStatus: builder.mutation({
+            query: ({ orderId, status }) => ({
+                url: `/orders/update_status/${orderId}/`,
+                method: 'PATCH',
+                body: { status },
+            }),
+            invalidatesTags: ['Orders'],
         }),
     }),
 })
@@ -66,5 +95,7 @@ export const {
     useGetOrderByIdQuery,
     useDeleteOrderImageMutation,
     useCompleteOrderMutation,
-    useGetPrintFormatsQuery
+    useGetPrintFormatsQuery,
+    useDeleteOrderMutation,
+    useUpdateOrderStatusMutation
 } = ordersApi;

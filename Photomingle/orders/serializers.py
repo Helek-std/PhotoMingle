@@ -5,11 +5,14 @@ from .models import Order, Image, PrintFormat
 
 class OrderSearchInputSerializer(serializers.Serializer):
     search = serializers.CharField(required=False, allow_blank=True)
+    admin_request = serializers.BooleanField(required=False)
 
 
 class OrderListOutputSerializer(serializers.Serializer):
     order_ids = serializers.ListField(child=serializers.CharField())
     order_names = serializers.ListField(child=serializers.CharField())
+    order_users = serializers.ListField(child=serializers.CharField())
+    order_status = serializers.ListField(child=serializers.CharField())
 
 
 class OrderCreateInputSerializer(serializers.Serializer):
