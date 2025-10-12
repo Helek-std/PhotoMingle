@@ -1,20 +1,24 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-export function getCookie(name: string): string | null {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) {
-        return parts.pop().split(';').shift() || null;
-    }
-    return null;
+function getCookie(name: string) {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? match[2] : null;
 }
 
 export const usersApi = createApi({
     reducerPath: 'usersApi',
     baseQuery: fetchBaseQuery({
         baseUrl: '/api/users/',
-        credentials: 'include', // важно, чтобы cookie сессии шли на сервер
+        credentials: 'include',
+        prepareHeaders: (headers) => {
+            const csrfToken = getCookie("csrftoken");
+            if (csrfToken) {
+                headers.set("X-CSRFToken", csrfToken);
+            }
+            return headers;
+        },
     }),
+
     endpoints: (builder) => ({
         register: builder.mutation({
             query: (body) => ({
@@ -54,6 +58,42 @@ export const usersApi = createApi({
                 method: 'GET',
             }),
         }),
+        getUsers: builder.query({
+            query: (search = "") =>
+                search ? `/?search=${encodeURIComponent(search)}` : "/",
+            transformResponse: (response: any[]) =>
+                response.map(user => ({
+                    id: user.id,
+                    email: user.email,
+                    role: user.role,
+                    avatar: user.avatar || null,
+                })),
+            providesTags: ["User"],
+        }),
+        deleteUser: builder.mutation({
+            query: (userId) => ({
+                url: `delete/${userId}/`,
+                method: "DELETE",
+            }),
+            invalidatesTags:["User"],
+        }),
+        createUser: builder.mutation({
+            query: (formData) => ({
+                url: "add/",
+                method: "POST",
+                body: formData,
+            }),
+            invalidatesTags: ["User"],
+        }),
+
+        editUser: builder.mutation({
+            query: (formData) => ({
+                url: `edit/${formData.get("id")}/`,
+                method: "PATCH",
+                body: formData,
+            }),
+            invalidatesTags: ["User"],
+        }),
     }),
 });
 
@@ -63,4 +103,8 @@ export const {
     useTwoFactorAuthMutation,
     useLogoutMutation,
     useMyInfoQuery,
+    useGetUsersQuery,
+    useDeleteUserMutation,
+    useCreateUserMutation,
+    useEditUserMutation
 } = usersApi;

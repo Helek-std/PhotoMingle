@@ -12,7 +12,8 @@ export default function OrdersPage() {
     const { data: orders = [], isLoading, isError } = useGetOrdersQuery({
         search,
         admin_request: true,
-    });
+    },
+    { pollingInterval: 5000 });
     const columns = [
         { key: "id", label: "ID" },
         { key: "name", label: "Название" },
