@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {useLoginMutation, useTwoFactorAuthMutation} from "./services/usersApi";
+import {useLoginMutation, useTwoFactorAuthMutation} from "../services/usersApi";
 import {Box, CircularProgress, Paper, TextField, Typography} from "@mui/material";
 import Button from "@mui/material/Button";
 

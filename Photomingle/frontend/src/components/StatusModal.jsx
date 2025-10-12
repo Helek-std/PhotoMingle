@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import { Modal, Box, Typography, Button, MenuItem, Select, FormControl, InputLabel } from '@mui/material';
-import {useUpdateOrderStatusMutation} from "./services/ordersApi";
+import {useUpdateOrderStatusMutation} from "../services/ordersApi";
 
 const modalStyle = {
     position: 'absolute',

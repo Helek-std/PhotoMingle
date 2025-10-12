@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import { Box, Avatar, Typography } from "@mui/material";
-import DataTable from "./DataTable";
-import TableHeader from "./TableHeader";
+import DataTable from "../components/DataTable";
+import TableHeader from "../components/TableHeader";
 
 const users = [
     { id: 1, name: "Иван Иванов", email: "ivan@example.com", avatar: "https://i.pravatar.cc/40?img=1" },

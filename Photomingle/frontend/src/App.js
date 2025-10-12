@@ -1,16 +1,16 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Login from "./Login";
-import Register from "./Register";
-import MyOrders from "./MyOrders";
-import OrderDetailPage from "./OrderDetailPage"
-import InvitedOrderPage from "./InvitedOrderPage"
-import ImageRedactor from "./ImageRedactor"
-import AdminPage from "./AdminPage";
-import HomePage from "./HomePage";
-import UsersPage from "./UsersPage";
-import OrdersPage from "./OrdersPage";
-import PricesPage from "./PricesPage";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import MyOrders from "./pages/MyOrders";
+import OrderDetailPage from "./pages/OrderDetailPage"
+import InvitedOrderPage from "./pages/InvitedOrderPage"
+import ImageRedactor from "./pages/ImageRedactor"
+import AdminPage from "./pages/AdminPage";
+import HomePage from "./pages/HomePage";
+import UsersPage from "./pages/UsersPage";
+import OrdersPage from "./pages/OrdersPage";
+import PricesPage from "./pages/PricesPage";
 const App = () => {
   return (
     <Router>

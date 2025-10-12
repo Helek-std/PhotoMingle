@@ -1,6 +1,6 @@
 import React from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import {useCompleteOrderMutation, useDeleteOrderImageMutation, useGetOrderByIdQuery} from "./services/ordersApi";
+import {useCompleteOrderMutation, useDeleteOrderImageMutation, useGetOrderByIdQuery} from "../services/ordersApi";
 
 
 const STATUS_TRANSLATIONS = {

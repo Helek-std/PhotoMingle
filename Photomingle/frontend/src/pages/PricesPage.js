@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Box, Typography } from "@mui/material";
-import DataTable from "./DataTable";
-import TableHeader from "./TableHeader";
+import DataTable from "../components/DataTable";
+import TableHeader from "../components/TableHeader";
 
 const prices = [
     { id: 1, name: "Формат A4", width_mm: 210, height_mm: 297, price: 150 },

@@ -14,7 +14,7 @@ import {
     IconButton,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import ResponsiveAppBar from "./ResponsiveAppBar";
+import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import { motion } from "framer-motion";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import PriceChangeIcon from "@mui/icons-material/PriceChange";

@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { Box, Typography } from "@mui/material";
-import TableHeader from "./TableHeader";
-import DataTable from "./DataTable";
-import {useDeleteOrderMutation, useGetOrdersQuery} from "./services/ordersApi";
-import StatusModal from "./StatusModal";
-import DeleteOrderModal from "./DeleteOrderModal";
+import TableHeader from "../components/TableHeader";
+import DataTable from "../components/DataTable";
+import {useDeleteOrderMutation, useGetOrdersQuery} from "../services/ordersApi";
+import StatusModal from "../components/StatusModal";
+import DeleteOrderModal from "../components/DeleteOrderModal";
 
 export default function OrdersPage() {
     const [search, setSearch] = useState("");

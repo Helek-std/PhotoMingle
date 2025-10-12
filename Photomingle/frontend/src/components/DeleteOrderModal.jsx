@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Modal, Box, Typography, Button } from '@mui/material';
-import {useDeleteOrderMutation} from "./services/ordersApi";
+import {useDeleteOrderMutation} from "../services/ordersApi";
 
 const modalStyle = {
     position: 'absolute',

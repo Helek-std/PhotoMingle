@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Box, Button, TextField, Typography, Paper, IconButton } from "@mui/material";
 import AddIcon from '@mui/icons-material/Add';
 import { Link, useNavigate } from "react-router-dom";
-import ResponsiveAppBar from "./ResponsiveAppBar";
-import { useGetOrdersQuery, useCreateOrderMutation } from "./services/ordersApi";
+import ResponsiveAppBar from "../components/ResponsiveAppBar";
+import { useGetOrdersQuery, useCreateOrderMutation } from "../services/ordersApi";
 
 export default function MyOrdersPage() {
     const [showCreateForm, setShowCreateForm] = useState(false);

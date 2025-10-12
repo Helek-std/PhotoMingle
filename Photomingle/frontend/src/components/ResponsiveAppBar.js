@@ -1,21 +1,22 @@
-import * as React from 'react'
-import AppBar from '@mui/material/AppBar'
-import Box from '@mui/material/Box'
-import Toolbar from '@mui/material/Toolbar'
-import IconButton from '@mui/material/IconButton'
-import Typography from '@mui/material/Typography'
-import Menu from '@mui/material/Menu'
-import MenuIcon from '@mui/icons-material/Menu'
-import Container from '@mui/material/Container'
-import Avatar from '@mui/material/Avatar'
-import Button from '@mui/material/Button'
-import Tooltip from '@mui/material/Tooltip'
-import MenuItem from '@mui/material/MenuItem'
-import { motion } from 'framer-motion'
-import { styled } from '@mui/system'
-import {useLogoutMutation, useMyInfoQuery} from "./services/usersApi";
+import * as React from 'react';
+import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
+import Toolbar from '@mui/material/Toolbar';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import Menu from '@mui/material/Menu';
+import MenuIcon from '@mui/icons-material/Menu';
+import Container from '@mui/material/Container';
+import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
+import MenuItem from '@mui/material/MenuItem';
+import { motion } from 'framer-motion';
+import { styled } from '@mui/system';
+import { useLogoutMutation, useMyInfoQuery } from '../services/usersApi';
 import PersonIcon from '@mui/icons-material/Person';
-import {useLocation, useNavigate} from "react-router-dom";
+import { useLocation, useNavigate } from 'react-router-dom';
+import {useState} from "react";
 
 const GlitchText = styled(motion.div)(({ theme }) => ({
     position: 'relative',
@@ -33,67 +34,61 @@ const GlitchText = styled(motion.div)(({ theme }) => ({
         '80%': { textShadow: '2px -2px red, -2px 2px blue' },
         '100%': { textShadow: '2px 0 red, -2px 0 blue' },
     },
-}))
-
-const pages = ['Главная', 'Мои заказы', 'Админ-панель']
-const settings = ['Профиль', 'Выход']
+}));
 
 export default function ResponsiveAppBar() {
     const location = useLocation();
-    const [anchorElNav, setAnchorElNav] = React.useState(null);
-    const [anchorElUser, setAnchorElUser] = React.useState(null);
-
-    const pathToPageMap: Record<string, string> = {
-        '/': 'Главная',
-        '/orders': 'Мои заказы',
-        '/admin': 'Админ-панель',
-    };
-
-    const currentPage = pathToPageMap[location.pathname] || 'Главная';
-    const [selected, setSelected] = React.useState(currentPage);
     const navigate = useNavigate();
-    const [logout] = useLogoutMutation();
-    const settingsActions = [
-        () => navigate("/profile"),
-        async () => {
-            try {
-                await logout({all:false}).unwrap();
-                refetch();
-            } catch (e) {
-                console.error("Ошибка при выходе", e);
-            }
-        },
-    ];
+
+    const [anchorElNav, setAnchorElNav] = useState(null);
+    const [anchorElUser, setAnchorElUser] = useState(null);
 
     const { data: user, error, isLoading, refetch } = useMyInfoQuery(undefined, {
         refetchOnMountOrArgChange: true,
     });
-    console.log(user);
 
-    const handleOpenNavMenu = (event) => {
+    const [logout] = useLogoutMutation();
+
+    const settings = ['Профиль', 'Выход'];
+    const settingsActions = [
+        () => navigate('/profile'),
+        async () => {
+            try {
+                await logout({ all: false }).unwrap();
+                refetch();
+            } catch (e) {
+                console.error('Ошибка при выходе', e);
+            }
+        },
+    ];
+
+    const pages = React.useMemo(() => {
+        const basePages = [{ name: 'Главная', path: '/' }];
+        if (user && !error) {
+            basePages.push({ name: 'Мои заказы', path: '/orders' });
+            if (user.is_staff || user.is_admin || user.role === 'admin') {
+                basePages.push({ name: 'Админ-панель', path: '/admin' });
+            }
+        }
+        return basePages;
+    }, [user, error]);
+
+    const pathToPageMap = Object.fromEntries(pages.map(p => [p.path, p.name]));
+    const currentPage = pathToPageMap[location.pathname] || 'Главная';
+    const [selected, setSelected] = React.useState(currentPage);
+
+    const handleOpenNavMenu = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorElNav(event.currentTarget);
     };
-    const handleOpenUserMenu = (event) => {
+    const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorElUser(event.currentTarget);
     };
 
     const handleCloseNavMenu = (page?: string) => {
         if (page) {
             setSelected(page);
-
-            switch (page) {
-                case 'Главная':
-                    navigate('/');
-                    break;
-                case 'Мои заказы':
-                    navigate('/orders');
-                    break;
-                case 'Админ-панель':
-                    navigate('/admin');
-                    break;
-                default:
-                    break;
-            }
+            const targetPage = pages.find(p => p.name === page);
+            if (targetPage) navigate(targetPage.path);
         }
         setAnchorElNav(null);
     };
@@ -103,7 +98,7 @@ export default function ResponsiveAppBar() {
     };
 
     return (
-        <AppBar position="static" sx={{ background: '#111', width:"100%"}}>
+        <AppBar position="static" sx={{ background: '#111', width: '100%' }}>
             <Container maxWidth="xl">
                 <Toolbar disableGutters sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <GlitchText style={{ marginRight: '16px', display: 'flex' }}>Photomingle</GlitchText>
@@ -130,9 +125,9 @@ export default function ResponsiveAppBar() {
                             onClose={() => handleCloseNavMenu()}
                             sx={{ display: { xs: 'block', md: 'none' } }}
                         >
-                            {pages.map((page) => (
-                                <MenuItem key={page} onClick={() => handleCloseNavMenu(page)}>
-                                    <Typography textAlign="center">{page}</Typography>
+                            {pages.map(page => (
+                                <MenuItem key={page.name} onClick={() => handleCloseNavMenu(page.name)}>
+                                    <Typography textAlign="center">{page.name}</Typography>
                                 </MenuItem>
                             ))}
                         </Menu>
@@ -140,19 +135,19 @@ export default function ResponsiveAppBar() {
 
                     {/* Desktop */}
                     <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-                        {pages.map((page) => (
+                        {pages.map(page => (
                             <Button
-                                key={page}
-                                onClick={() => handleCloseNavMenu(page)}
+                                key={page.name}
+                                onClick={() => handleCloseNavMenu(page.name)}
                                 sx={{
                                     my: 2,
-                                    color: selected === page ? 'primary.main' : 'white',
-                                    fontWeight: selected === page ? 'bold' : 'normal',
+                                    color: selected === page.name ? 'primary.main' : 'white',
+                                    fontWeight: selected === page.name ? 'bold' : 'normal',
                                     display: 'block',
                                     fontSize: '1.1rem',
                                 }}
                             >
-                                {page}
+                                {page.name}
                             </Button>
                         ))}
                     </Box>
@@ -200,9 +195,7 @@ export default function ResponsiveAppBar() {
                             <Button
                                 variant="outlined"
                                 color="inherit"
-                                onClick={() => {
-                                    navigate("/login");
-                                }}
+                                onClick={() => navigate('/login')}
                             >
                                 Войти
                             </Button>
@@ -211,5 +204,5 @@ export default function ResponsiveAppBar() {
                 </Toolbar>
             </Container>
         </AppBar>
-    )
+    );
 }

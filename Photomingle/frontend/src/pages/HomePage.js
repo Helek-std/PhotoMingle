@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import {Box, Typography, Button, Card, CardContent, Grid, Paper, Rating} from "@mui/material";
-import ResponsiveAppBar from "./ResponsiveAppBar";
-import InfiniteScroll from "./components/InfiniteScroll";
+import ResponsiveAppBar from "../components/ResponsiveAppBar";
+import InfiniteScroll from "../components/InfiniteScroll";
 import {useNavigate} from "react-router-dom";
 import { motion } from "framer-motion";
-import {useGetPrintFormatsQuery} from "./services/ordersApi";
+import {useGetPrintFormatsQuery} from "../services/ordersApi";
 const generateReviewItems = (count: number) => {
     return Array.from({ length: count }, (_, i) => ({
         content: (
