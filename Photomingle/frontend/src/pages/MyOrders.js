@@ -12,7 +12,7 @@ export default function MyOrdersPage() {
     const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
 
     const navigate = useNavigate();
-    const { data: orders = [], error, isLoading, refetch } = useGetOrdersQuery(debouncedSearch);
+    const { data: orders = [], error, isLoading, refetch } = useGetOrdersQuery({search:debouncedSearch});
     const [createOrder, { isLoading: creating }] = useCreateOrderMutation();
 
     useEffect(() => {

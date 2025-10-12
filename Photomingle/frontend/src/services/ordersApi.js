@@ -77,6 +77,7 @@ export const ordersApi = createApi({
         }),
         getPrintFormats: builder.query({
             query: () => 'formats/',
+            providesTags: ["PrintFormat"],
         }),
         updateOrderStatus: builder.mutation({
             query: ({ orderId, status }) => ({
@@ -85,6 +86,30 @@ export const ordersApi = createApi({
                 body: { status },
             }),
             invalidatesTags: ['Orders'],
+        }),
+        addFormat: builder.mutation({
+            query: (newFormat) => ({
+                url: "/formats/add/",
+                method: "POST",
+                body: newFormat,
+            }),
+            invalidatesTags: ["PrintFormat"],
+        }),
+
+        editFormat: builder.mutation({
+            query: ({ id, ...updatedData }) => ({
+                url: `/formats/edit/${id}/`,
+                method: "PUT",
+                body: updatedData,
+            }),
+            invalidatesTags: ["PrintFormat"],
+        }),
+        deleteFormat: builder.mutation({
+            query: (id) => ({
+                url: `/formats/delete/${id}/`,
+                method: "DELETE",
+            }),
+            invalidatesTags: ["PrintFormat"],
         }),
     }),
 })
@@ -97,5 +122,9 @@ export const {
     useCompleteOrderMutation,
     useGetPrintFormatsQuery,
     useDeleteOrderMutation,
-    useUpdateOrderStatusMutation
+    useUpdateOrderStatusMutation,
+    useAddFormatMutation,
+    useEditFormatMutation,
+    useDeleteFormatMutation,
+
 } = ordersApi;

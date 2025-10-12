@@ -104,3 +104,85 @@ class FormatsView(APIView):
         formats = PrintFormat.objects.all()
         serializer = PrintFormatSerializer(formats, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class AddFormatView(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self, request):
+        if not request.user.is_staff:
+            return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+        data = request.data
+        try:
+            name = data.get("name")
+            width_mm = data.get("width_mm")
+            height_mm = data.get("height_mm")
+            price = data.get("price")
+
+            if not all([name, width_mm, height_mm, price]):
+                return Response({"error": "Missing required fields"}, status=status.HTTP_400_BAD_REQUEST)
+
+            format_obj = PrintFormat.objects.create(
+                name=name,
+                width_mm=width_mm,
+                height_mm=height_mm,
+                price=price,
+            )
+
+            return Response(
+                {
+                    "id": str(format_obj.id),
+                    "name": format_obj.name,
+                    "width_mm": format_obj.width_mm,
+                    "height_mm": format_obj.height_mm,
+                    "price": format_obj.price,
+                },
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class EditFormatView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, format_id):
+        if not request.user.is_staff:
+            return Response({"error": "Forbidden"}, status=status.HTTP_403_FORBIDDEN)
+        data = request.data
+        try:
+            try:
+                format_obj = PrintFormat.objects.get(id=format_id)
+            except PrintFormat.DoesNotExist:
+                return Response({"error": "Format not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            for field in ["name", "width_mm", "height_mm", "price"]:
+                if field in data:
+                    setattr(format_obj, field, data[field])
+            format_obj.save()
+
+            return Response(
+                {
+                    "id": str(format_obj.id),
+                    "name": format_obj.name,
+                    "width_mm": format_obj.width_mm,
+                    "height_mm": format_obj.height_mm,
+                    "price": format_obj.price,
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class DeleteFormatView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, format_id):
+        try:
+            try:
+                format_obj = PrintFormat.objects.get(id=format_id)
+            except PrintFormat.DoesNotExist:
+                return Response({"error": "Format not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            format_obj.delete()
+            return Response({"message": "Format deleted successfully"}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

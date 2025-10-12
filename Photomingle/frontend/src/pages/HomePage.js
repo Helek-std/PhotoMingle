@@ -109,8 +109,7 @@ export default function HomePage() {
                         p: 4,
                         position: "relative",
                         overflow: "hidden",
-                        backgroundImage:
-                            "url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=60')",
+                        backgroundImage: "url('/orders.jpg')",
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                     }}
@@ -127,7 +126,7 @@ export default function HomePage() {
                             textAlign="center"
                             color="white"
                             sx={{
-                                textShadow: "0 2px 4px rgba(0, 0, 0, 0.6)",
+                                textShadow: "0 6px 8px rgba(0, 0, 0, 1)",
                                 letterSpacing: "0.5px",
                                 fontWeight: 600,
                             }}
@@ -160,7 +159,7 @@ export default function HomePage() {
                 {/* Правая половина */}
                 <Box
                     sx={{
-                        flex: 1, // ✅ равная ширина и высота
+                        flex: 1,
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "flex-start",

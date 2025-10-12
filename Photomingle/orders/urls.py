@@ -1,7 +1,7 @@
 # urls.py
 from django.urls import path
 from .views import OrderListView, OrderCreateView, OrderDetailView, OrderDeleteImageView, OrderCompleteView, \
-    FormatsView, OrderDeleteView, OrderStatusUpdateView
+    FormatsView, OrderDeleteView, OrderStatusUpdateView, AddFormatView, EditFormatView, DeleteFormatView
 
 urlpatterns = [
     path("orders/", OrderListView.as_view(), name="orders-list"),
@@ -11,5 +11,8 @@ urlpatterns = [
     path("orders/delete/<uuid:order_id>/", OrderDeleteView.as_view(), name="order-delete"),
     path("orders/<uuid:order_id>/complete/", OrderCompleteView.as_view(), name="order-complete"),
     path("orders/update_status/<uuid:order_id>/", OrderStatusUpdateView.as_view(), name="order-update-status"),
-    path("formats/", FormatsView.as_view(), name="formats")
+    path("formats/", FormatsView.as_view(), name="formats"),
+    path("formats/add/", AddFormatView.as_view(), name="add-format"),
+    path("formats/edit/<int:format_id>/", EditFormatView.as_view(), name="edit-format"),
+    path("formats/delete/<int:format_id>/", DeleteFormatView.as_view(), name="delete-format"),
 ]
