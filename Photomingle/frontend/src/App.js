@@ -11,6 +11,7 @@ import HomePage from "./pages/HomePage";
 import UsersPage from "./pages/UsersPage";
 import OrdersPage from "./pages/OrdersPage";
 import PricesPage from "./pages/PricesPage";
+import AdminRoute from "./components/AdminRoute";
 const App = () => {
   return (
     <Router>
@@ -21,7 +22,14 @@ const App = () => {
         <Route path="/orders" element={<MyOrders />} />
         <Route path="/orders/:orderId" element={<OrderDetailPage />} />
         <Route path="/orders/invite/:shortcut_url" element={<InvitedOrderPage />} />
-        <Route path="/admin" element={<AdminPage />} />
+          <Route
+              path="/admin"
+              element={
+                  < AdminRoute>
+                      <AdminPage />
+                  </AdminRoute>
+              }
+          />
         <Route path="/admin/users" element={<UsersPage />}/>
         <Route path="/admin/orders" element={<OrdersPage />}/>
         <Route path="/admin/prices" element={<PricesPage/>}/>
