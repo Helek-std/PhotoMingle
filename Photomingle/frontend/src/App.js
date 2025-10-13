@@ -30,9 +30,26 @@ const App = () => {
                   </AdminRoute>
               }
           />
-        <Route path="/admin/users" element={<UsersPage />}/>
-        <Route path="/admin/orders" element={<OrdersPage />}/>
-        <Route path="/admin/prices" element={<PricesPage/>}/>
+        <Route
+            path="/admin/users"
+            element={
+                < AdminRoute>
+                    <UsersPage />
+                </AdminRoute>
+            }
+        />
+        <Route path="/admin/orders"
+               element={
+            < AdminRoute>
+                <OrdersPage />
+            </AdminRoute>
+        }/>
+
+        <Route path="/admin/prices" element={
+            < AdminRoute>
+            <PricesPage/>
+            </AdminRoute>
+            }/>
 	    <Route path="/orders/:orderId/addImage" element={<ImageRedactor />}/>
       </Routes>
     </Router>
