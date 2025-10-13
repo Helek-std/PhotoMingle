@@ -1,3 +1,4 @@
+from django.contrib.auth import login
 from django.contrib.postgres.search import TrigramSimilarity
 from django.core.exceptions import ObjectDoesNotExist
 from django.views.decorators.csrf import csrf_exempt
@@ -43,29 +44,13 @@ class LoginView(APIView):
 
         user, message = login_user(
             serializer.validated_data["email"],
-            serializer.validated_data["password"]
+            serializer.validated_data["password"],
+            request
         )
         if not user:
             return Response({"error": message}, status=status.HTTP_401_UNAUTHORIZED)
-
-        return Response({"message": "2FA required", "email": str(user.email)}, status=status.HTTP_200_OK)
-
-class TwoFactorAuthView(APIView):
-    authentication_classes = []
-    permission_classes = []
-    def post(self, request):
-        serializer = TwoFactorInputSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        user, error = verify_two_factor(
-            request,
-            serializer.validated_data["email"],
-            serializer.validated_data["code"]
-        )
-        if error:
-            return Response({"error": error}, status=status.HTTP_400_BAD_REQUEST)
-
         return Response(status=status.HTTP_200_OK)
+
 
 class LogoutView(APIView):
     def post(self, request):

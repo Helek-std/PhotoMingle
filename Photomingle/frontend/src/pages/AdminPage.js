@@ -3,7 +3,6 @@ import {
     Box,
     Typography,
     Card,
-    CardContent,
     Grid,
     Paper,
     Table,
@@ -12,6 +11,7 @@ import {
     TableRow,
     TableCell,
     IconButton,
+    CircularProgress,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
@@ -19,21 +19,20 @@ import { motion } from "framer-motion";
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
 import PriceChangeIcon from "@mui/icons-material/PriceChange";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
+import {useGetMonitorStatsQuery} from "../services/ordersApi";
 
-// --- Кастомный GaugeChart ---
 interface GaugeProps {
     value: number; // 0..1
     label: string;
 }
 
 const Gauge: React.FC<GaugeProps> = ({ value, label }) => {
-    const radius = 100; // увеличенный радиус
+    const radius = 100;
     const stroke = 14;
     const normalizedRadius = radius - stroke * 0.5;
-    const circumference = normalizedRadius * Math.PI * 2; // ! важно: полная окружность
+    const circumference = normalizedRadius * Math.PI * 2;
     const offset = circumference - value * circumference;
 
-    // Цветовая шкала: зелёный → жёлтый → красный
     const getColor = (v: number) => {
         if (v < 0.3) return "#4caf50";
         if (v < 0.7) return "#ff9800";
@@ -46,7 +45,6 @@ const Gauge: React.FC<GaugeProps> = ({ value, label }) => {
                 {label}
             </Typography>
             <svg height={radius * 2} width={radius * 2}>
-                {/* Фоновый круг */}
                 <circle
                     stroke="#e0e0e0"
                     fill="transparent"
@@ -55,7 +53,6 @@ const Gauge: React.FC<GaugeProps> = ({ value, label }) => {
                     cx={radius}
                     cy={radius}
                 />
-                {/* Анимированный прогресс */}
                 <motion.circle
                     stroke={getColor(value)}
                     fill="transparent"
@@ -72,7 +69,6 @@ const Gauge: React.FC<GaugeProps> = ({ value, label }) => {
                         filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
                     }}
                 />
-                {/* Центральный текст */}
                 <text
                     x="50%"
                     y="50%"
@@ -84,7 +80,6 @@ const Gauge: React.FC<GaugeProps> = ({ value, label }) => {
                 >
                     {(value * 100).toFixed(0)}%
                 </text>
-                {/* Подписка "Нагрузка" */}
                 <text
                     x="50%"
                     y="65%"
@@ -96,28 +91,6 @@ const Gauge: React.FC<GaugeProps> = ({ value, label }) => {
                     Нагрузка
                 </text>
             </svg>
-            {/* Индикатор уровня (можно убрать, если не нужно) */}
-            <Box
-                sx={{
-                    mt: 1,
-                    display: "flex",
-                    justifyContent: "center",
-                    gap: 0.5,
-                }}
-            >
-                {[...Array(5)].map((_, i) => (
-                    <Box
-                        key={i}
-                        sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: "50%",
-                            bgcolor:
-                                value > (i + 1) / 5 ? getColor(value) : "#e0e0e0",
-                        }}
-                    />
-                ))}
-            </Box>
         </Box>
     );
 };
@@ -125,15 +98,14 @@ const Gauge: React.FC<GaugeProps> = ({ value, label }) => {
 export default function AdminDashboard() {
     const navigate = useNavigate();
 
-    const cpuLoad = 0.72;
-    const ramLoad = 0.58;
+    const { data, isLoading, isError } = useGetMonitorStatsQuery(undefined, {
+        pollingInterval: 5000,
+    });
 
-    const processes = [
-        { name: "nginx", cpu: 12.5, ram: 30.1 },
-        { name: "postgres", cpu: 25.4, ram: 40.8 },
-        { name: "redis", cpu: 8.1, ram: 10.3 },
-        { name: "node-app", cpu: 38.9, ram: 55.4 },
-    ];
+    const cpuLoad = (data?.cpu?.percent ?? 0) / 100;
+    const ramLoad = (data?.ram?.percent ?? 0) / 100;
+    const diskLoad = (data?.disk?.percent ?? 0) / 100;
+    const processes = data?.processes ?? [];
 
     const menuItems = [
         {
@@ -153,13 +125,27 @@ export default function AdminDashboard() {
         },
     ];
 
+    if (isLoading)
+        return (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 10 }}>
+                <CircularProgress />
+            </Box>
+        );
+
+    if (isError)
+        return (
+            <Box sx={{ textAlign: "center", mt: 10, color: "red" }}>
+                Ошибка загрузки данных мониторинга
+            </Box>
+        );
+
     return (
         <Box sx={{ flexGrow: 1, minHeight: "100vh", backgroundColor: "#fafafa" }}>
             <ResponsiveAppBar />
 
             <Box
                 sx={{
-                    maxWidth: 1200,
+                    maxWidth: 1400,
                     mx: "auto",
                     px: 4,
                     pt: 6,
@@ -219,47 +205,27 @@ export default function AdminDashboard() {
 
                 {/* Чарты загрузки */}
                 <Grid container spacing={4} justifyContent="center" sx={{ mb: 6 }}>
-                    <Grid item xs={12} md={5}>
-                        <Paper
-                            elevation={8}
-                            sx={{
-                                p: 4,
-                                textAlign: "center",
-                                borderRadius: 4,
-                                backgroundColor: "#fff",
-                                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                                "&:hover": {
-                                    boxShadow: "0 6px 25px rgba(0,0,0,0.12)",
-                                },
-                                transition: "box-shadow 0.3s ease",
-                            }}
-                        >
+                    <Grid item xs={12} md={4}>
+                        <Paper elevation={8} sx={paperStyle}>
                             <Gauge value={cpuLoad} label="Загрузка ЦП" />
                         </Paper>
                     </Grid>
 
-                    <Grid item xs={12} md={5}>
-                        <Paper
-                            elevation={8}
-                            sx={{
-                                p: 4,
-                                textAlign: "center",
-                                borderRadius: 4,
-                                backgroundColor: "#fff",
-                                boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                                "&:hover": {
-                                    boxShadow: "0 6px 25px rgba(0,0,0,0.12)",
-                                },
-                                transition: "box-shadow 0.3s ease",
-                            }}
-                        >
+                    <Grid item xs={12} md={4}>
+                        <Paper elevation={8} sx={paperStyle}>
                             <Gauge value={ramLoad} label="Загрузка ОЗУ" />
+                        </Paper>
+                    </Grid>
+
+                    <Grid item xs={12} md={4}>
+                        <Paper elevation={8} sx={paperStyle}>
+                            <Gauge value={diskLoad} label="Загрузка Диска" />
                         </Paper>
                     </Grid>
                 </Grid>
 
                 {/* Таблица процессов */}
-                <Box sx={{ width: "100%", maxWidth: 900, mx: "auto" }}>
+                <Box sx={{ width: "100%", maxWidth: 1000, mx: "auto" }}>
                     <Paper elevation={8} sx={{ borderRadius: 3, overflow: "hidden" }}>
                         <Table>
                             <TableHead sx={{ backgroundColor: "#111" }}>
@@ -276,7 +242,7 @@ export default function AdminDashboard() {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {processes.map((proc, idx) => (
+                                {processes.map((proc: any, idx: number) => (
                                     <TableRow
                                         key={idx}
                                         sx={{
@@ -284,8 +250,10 @@ export default function AdminDashboard() {
                                         }}
                                     >
                                         <TableCell>{proc.name}</TableCell>
-                                        <TableCell>{proc.cpu}</TableCell>
-                                        <TableCell>{proc.ram}</TableCell>
+                                        <TableCell>{proc.cpu_percent}</TableCell>
+                                        <TableCell>
+                                            {proc.memory_percent?.toFixed(2)}
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -296,3 +264,15 @@ export default function AdminDashboard() {
         </Box>
     );
 }
+
+const paperStyle = {
+    p: 4,
+    textAlign: "center",
+    borderRadius: 4,
+    backgroundColor: "#fff",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+    "&:hover": {
+        boxShadow: "0 6px 25px rgba(0,0,0,0.12)",
+    },
+    transition: "box-shadow 0.3s ease",
+};

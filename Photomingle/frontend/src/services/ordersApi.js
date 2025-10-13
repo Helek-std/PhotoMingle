@@ -44,6 +44,7 @@ export const ordersApi = createApi({
                 method: 'POST',
                 body: newOrder,
             }),
+            invalidatesTags: ['Orders'],
         }),
         getOrderById: builder.query({
             query: (orderId) => ({
@@ -111,6 +112,22 @@ export const ordersApi = createApi({
             }),
             invalidatesTags: ["PrintFormat"],
         }),
+        getMonitorStats: builder.query({
+            query: () => "status/",
+            transformResponse: (response) => ({
+                cpu: response.cpu,
+                ram: response.ram,
+                disk: response.disk,
+                processes: response.processes,
+            }),
+            providesTags: ["Monitor"],
+        }),
+        joinOrderByInvite: builder.mutation({
+            query: (shortcut_url) => ({
+                url: `orders/invite/${shortcut_url}/`,
+                method: "GET",
+            }),
+        }),
     }),
 })
 
@@ -126,5 +143,6 @@ export const {
     useAddFormatMutation,
     useEditFormatMutation,
     useDeleteFormatMutation,
-
+    useGetMonitorStatsQuery,
+    useJoinOrderByInviteMutation
 } = ordersApi;

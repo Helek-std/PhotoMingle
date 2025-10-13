@@ -34,13 +34,6 @@ export const usersApi = createApi({
                 body,
             }),
         }),
-        twoFactorAuth: builder.mutation({
-            query: (body: { email: string; code: string }) => ({
-                url: '2fa/',
-                method: 'POST',
-                body,
-            }),
-        }),
         logout: builder.mutation({
             query: (body: { all?: boolean } = { all: false }) => {
                 const csrfToken = getCookie('csrftoken')
@@ -51,12 +44,14 @@ export const usersApi = createApi({
                     headers: csrfToken ? { 'X-CSRFToken': csrfToken } : {},
                 }
             },
+            invalidatesTags: ['Myinfo']
         }),
         myInfo: builder.query({
             query: () => ({
                 url: 'myinfo/',
                 method: 'GET',
             }),
+            providesTags: ['Myinfo']
         }),
         getUsers: builder.query({
             query: (search = "") =>
@@ -75,7 +70,7 @@ export const usersApi = createApi({
                 url: `delete/${userId}/`,
                 method: "DELETE",
             }),
-            invalidatesTags:["User"],
+            invalidatesTags:["User", "Myinfo"],
         }),
         createUser: builder.mutation({
             query: (formData) => ({
@@ -92,7 +87,7 @@ export const usersApi = createApi({
                 method: "PATCH",
                 body: formData,
             }),
-            invalidatesTags: ["User"],
+            invalidatesTags: ["User", "Myinfo"],
         }),
     }),
 });
@@ -100,7 +95,6 @@ export const usersApi = createApi({
 export const {
     useRegisterMutation,
     useLoginMutation,
-    useTwoFactorAuthMutation,
     useLogoutMutation,
     useMyInfoQuery,
     useGetUsersQuery,

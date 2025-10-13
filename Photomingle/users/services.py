@@ -23,28 +23,15 @@ def register_user(email: str, password: str):
 
     user = CustomUser.objects.create_user(email=normalized_email, password=password)
     user.save()
-
-    if not settings.DEBUG:
-        otp_email = EmailSender(normalized_email)
-        if not otp_email.send_mail():
-            return user, "Введите код из письма"
-        return None, "Ошибка сервера при отправке кода"
-
-    return user, "Введите код из письма"
+    return user
 
 
-def login_user(email: str, password: str):
+def login_user(email: str, password: str, request):
     user = authenticate(email=email, password=password)
     if not user:
         return None, "Неверные учетные данные"
-
-    if not settings.DEBUG:
-        otp_email = EmailSender(email.lower())
-        if not otp_email.send_mail():
-            return user, "Введите код из письма"
-        return None, "Ошибка сервера при отправке кода"
-
-    return user, "Введите код из письма"
+    login(request, user)
+    return user, ''
 
 
 def logout_user(refresh_token: str):

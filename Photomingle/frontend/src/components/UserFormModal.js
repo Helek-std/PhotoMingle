@@ -15,7 +15,7 @@ import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import AddAPhotoRoundedIcon from "@mui/icons-material/AddAPhotoRounded";
 import {useCreateUserMutation, useEditUserMutation} from "../services/usersApi";
 
-export default function UserFormModal({ open, handleClose, user }) {
+export default function UserFormModal({ open, handleClose, user, admin=false }) {
     const [email, setEmail] = useState(user?.email || "");
     const [password, setPassword] = useState("");
     const [isAdmin, setIsAdmin] = useState(user?.role === "admin" || false);
@@ -204,10 +204,10 @@ export default function UserFormModal({ open, handleClose, user }) {
                             helperText={isEdit ? "Оставьте пустым, чтобы не менять пароль" : ""}
                             sx={{ mb: 2 }}
                         />
-                        <FormControlLabel
+                        {admin && (<FormControlLabel
                             control={<Checkbox checked={isAdmin} onChange={(e) => setIsAdmin(e.target.checked)} />}
                             label="Администратор"
-                        />
+                        />)}
                     </Box>
                 </Box>
 

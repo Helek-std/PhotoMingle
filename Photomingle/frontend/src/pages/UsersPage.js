@@ -82,6 +82,7 @@ export default function UsersPage() {
                     open={openFormModal}
                     handleClose={handleFormClose}
                     user={selectedUser}
+                    admin={true}
                 />
             )}
 

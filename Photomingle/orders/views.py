@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from .models import PrintFormat
+from .models import PrintFormat, Order
 from .services import get_user_orders, create_order, delete_order_image, complete_order, get_order_detail, \
     get_all_orders, delete_order, change_status
 from .serializers import (
@@ -186,3 +186,24 @@ class DeleteFormatView(APIView):
             return Response({"message": "Format deleted successfully"}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class OrderInviteView(APIView):
+    permission_classes = []
+
+    def get(self, request, shortcut_url):
+        try:
+            order = Order.objects.get(shortcut_url=shortcut_url)
+        except:
+            return Response({'error': 'Invalid invite code'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not request.user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        user = request.user
+        if user == order.owner or order.guest_users.filter(id=user.id).exists():
+            pass
+        else:
+            order.guest_users.add(user)
+
+        serializer = OrderDetailSerializer(order)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -4,6 +4,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { Link, useNavigate } from "react-router-dom";
 import ResponsiveAppBar from "../components/ResponsiveAppBar";
 import { useGetOrdersQuery, useCreateOrderMutation } from "../services/ordersApi";
+import CreateOrderModal from "../components/CreateOrderModal";
 
 export default function MyOrdersPage() {
     const [showCreateForm, setShowCreateForm] = useState(false);
@@ -104,6 +105,7 @@ export default function MyOrdersPage() {
                     </Box>
                 )}
             </Box>
+            <CreateOrderModal open={showCreateForm} onClose={() => setShowCreateForm(false)} />
         </Box>
     );
 }

@@ -1,69 +1,57 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { CircularProgress, Box, Typography } from "@mui/material";
+import {useJoinOrderByInviteMutation} from "../services/ordersApi";
 
-const OrderInvitePage = () => {
-  const { shortcut_url } = useParams();
-  const [orderName, setOrderName] = useState('');
-  const [detail, setDetail] = useState('');
-  const [error, setError] = useState('');
-  const token = localStorage.getItem('access_token');
+export default function InvitePage() {
+    const { shortcut_url } = useParams();
+    const navigate = useNavigate();
+    const [joinOrder, { isLoading, isError, error }] = useJoinOrderByInviteMutation();
 
-  useEffect(() => {
-    const acceptInvite = async () => {
-      try {
-        const response = await fetch(`/api/orders/invite/${shortcut_url}/`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
+    useEffect(() => {
+        if (!shortcut_url) return;
 
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.detail || 'Ошибка при добавлении в заказ');
-        }
+        const handleJoin = async () => {
+            try {
+                const response = await joinOrder(shortcut_url).unwrap();
+                if (response?.order_id) {
+                    navigate(`/orders/${response.order_id}`);
+                } else {
+                    navigate("/orders");
+                }
+            } catch (err) {
+                if (err?.status === 401) {
+                    navigate("/login");
+                } else {
+                    console.error("Ошибка при добавлении в заказ:", err);
+                }
+            }
+        };
 
-        const data = await response.json();
-        setOrderName(data.order_name);
-        setDetail(data.detail);
-      } catch (err) {
-        setError(err.message);
-      }
-    };
+        handleJoin();
+    }, [shortcut_url, joinOrder, navigate]);
 
-    acceptInvite();
-  }, [shortcut_url, token]);
-
-   if (error) {
     return (
-      <div style={{ textAlign: 'center', marginTop: '50px', fontSize: '1.2rem', color: 'red' }}>
-        {error}
-      </div>
+        <Box
+            sx={{
+                minHeight: "100vh",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                bgcolor: "#fafafa",
+            }}
+        >
+            {isLoading ? (
+                <>
+                    <CircularProgress />
+                    <Typography sx={{ mt: 2 }}>Добавление в заказ...</Typography>
+                </>
+            ) : isError ? (
+                <Typography color="error">
+                    Ошибка при добавлении: {error?.data?.detail || "Не удалось выполнить запрос"}
+                </Typography>
+            ) : null}
+        </Box>
     );
-  }
-
-  if (!orderName) {
-    return (
-      <div style={{ textAlign: 'center', marginTop: '50px', fontSize: '1.2rem' }}>
-        {detail || 'Добавление в заказ...'}
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ textAlign: 'center', marginTop: '80px' }}>
-      <h2 style={{ fontSize: '2rem' }}>
-        Заказ <strong>{orderName}</strong> был добавлен в ваши заказы.
-      </h2>
-      <p style={{ marginTop: '20px', fontSize: '1.2rem' }}>
-        Перейти к{' '}
-        <Link to="/orders" style={{ color: 'green', fontWeight: 'bold', textDecoration: 'none' }}>
-          вашим заказам
-        </Link>.
-      </p>
-    </div>
-  );
-};
-
-export default OrderInvitePage;
+}

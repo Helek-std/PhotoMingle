@@ -1,8 +1,30 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
+import {useGetOrderByIdQuery, useGetPrintFormatsQuery} from "../services/ordersApi";
 
 const ImageRedactor = () => {
-  const { orderId } = useParams();
+    const { orderId } = useParams();
+    const { data: orderData, isLoading: orderLoading, isError: orderError } = useGetOrderByIdQuery(orderId);
+    const { data: formatsData = [], isLoading: formatsLoading, isError: formatsError } = useGetPrintFormatsQuery();
+    const [formats, setFormats] = useState([]);
+
+    useEffect(() => {
+        if (formatsData.length > 0) {
+            const formatted = formatsData.map(f => ({
+                ...f,
+                ratio: f.width_mm / f.height_mm,
+            }));
+            setFormats(formatted);
+            if (!printFormat) setPrintFormat(formatted[0].name);
+        }
+    }, [formatsData]);
+
+    useEffect(() => {
+        if (orderData) {
+            setOrders([orderData]);
+        }
+    }, [orderData]);
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -18,7 +40,6 @@ const ImageRedactor = () => {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const imageRef = useRef(null);
   const containerRef = useRef(null);
-  const [formats, setFormats] = useState([]);
   const [imageInfo, setImageInfo] = useState({
     naturalWidth: 0,
     naturalHeight: 0,

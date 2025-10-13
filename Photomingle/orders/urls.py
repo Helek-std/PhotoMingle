@@ -1,7 +1,8 @@
 # urls.py
 from django.urls import path
 from .views import OrderListView, OrderCreateView, OrderDetailView, OrderDeleteImageView, OrderCompleteView, \
-    FormatsView, OrderDeleteView, OrderStatusUpdateView, AddFormatView, EditFormatView, DeleteFormatView
+    FormatsView, OrderDeleteView, OrderStatusUpdateView, AddFormatView, EditFormatView, DeleteFormatView, \
+    OrderInviteView
 
 urlpatterns = [
     path("orders/", OrderListView.as_view(), name="orders-list"),
@@ -15,4 +16,5 @@ urlpatterns = [
     path("formats/add/", AddFormatView.as_view(), name="add-format"),
     path("formats/edit/<int:format_id>/", EditFormatView.as_view(), name="edit-format"),
     path("formats/delete/<int:format_id>/", DeleteFormatView.as_view(), name="delete-format"),
+    path('orders/invite/<str:shortcut_url>/', OrderInviteView.as_view(), name='order-invite'),
 ]

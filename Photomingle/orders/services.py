@@ -52,7 +52,10 @@ def create_order(user, name):
     )
 
 def get_order_detail(order_id, user):
-    return get_object_or_404(Order.objects.prefetch_related("images"), id=order_id, owner=user)
+    return get_object_or_404(
+        Order.objects.prefetch_related("images"),
+        Q(id=order_id) & (Q(owner=user) | Q(guest_users__in=[user]))
+    )
 
 
 def delete_order_image(order_id, image_id, user):
