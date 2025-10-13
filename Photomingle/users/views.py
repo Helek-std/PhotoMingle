@@ -14,7 +14,7 @@ from .serializers import (
     TwoFactorInputSerializer,
     MyInfoOutputSerializer, LogoutInputSerializer
 )
-from .services import register_user, login_user, verify_two_factor, get_user_info, logout_all_sessions, \
+from .services import register_user, login_user, get_user_info, logout_all_sessions, \
     logout_current_session
 
 

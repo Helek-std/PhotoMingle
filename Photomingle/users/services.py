@@ -23,7 +23,7 @@ def register_user(email: str, password: str):
 
     user = CustomUser.objects.create_user(email=normalized_email, password=password)
     user.save()
-    return user
+    return user, ''
 
 
 def login_user(email: str, password: str, request):
