@@ -86,7 +86,7 @@ def change_status(new_status_display: str, order_id: str):
 
 def complete_order(order_id, user):
     order = get_object_or_404(Order, id=order_id, owner=user)
-    order.status = OrderStatus.READY
+    order.status = OrderStatus.IN_WORK
     order.save()
     return order
 

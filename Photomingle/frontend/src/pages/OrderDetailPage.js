@@ -1,5 +1,7 @@
 import React from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
+import { Box, Typography, Button, Card, CardContent } from "@mui/material";
+import { motion } from "framer-motion";
 import {useCompleteOrderMutation, useDeleteOrderImageMutation, useGetOrderByIdQuery} from "../services/ordersApi";
 
 
@@ -38,172 +40,248 @@ const OrderDetailPage = () => {
     };
 
     return (
-        <div style={{ backgroundColor: "#fff", minHeight: "100vh", padding: "40px", color: "#333" }}>
-            <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-                <div style={{ textAlign: "left", marginBottom: "20px" }}>
-                    <Link
+        <Box sx={{ backgroundColor: "#fafafa", minHeight: "100vh", p: 5, color: "#333" }}>
+            <Box sx={{ maxWidth: "900px", margin: "0 auto" }}>
+                <Box sx={{ textAlign: "left", mb: 2.5 }}>
+                    <Button
+                        component={Link}
                         to="/orders"
-                        style={{
-                            padding: "10px 15px",
-                            backgroundColor: "#e0e0e0",
+                        variant="outlined"
+                        sx={{
+                            px: 3,
+                            py: 1,
+                            backgroundColor: "#fff",
                             color: "#333",
                             textDecoration: "none",
-                            borderRadius: "4px",
-                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                            borderRadius: 3,
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                            border: "1px solid #e0e0e0",
+                            textTransform: "none",
+                            fontSize: "1rem",
+                            "&:hover": {
+                                backgroundColor: "#f5f5f5",
+                                boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
+                            },
                         }}
                     >
                         Назад к списку заказов
-                    </Link>
-                </div>
+                    </Button>
+                </Box>
 
-                <h2
-                    style={{
-                        textAlign: "center",
-                        fontSize: "2rem",
-                        marginBottom: "30px",
-                        color: "#4CAF50",
-                    }}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
                 >
-                    Детали заказа
-                </h2>
+                    <Typography
+                        variant="h4"
+                        sx={{
+                            textAlign: "center",
+                            mb: 3.75,
+                            color: "primary.main",
+                            fontWeight: 600,
+                            letterSpacing: "0.5px",
+                        }}
+                    >
+                        Детали заказа
+                    </Typography>
+                </motion.div>
 
                 {isLoading ? (
-                    <p style={{ textAlign: "center" }}>Загрузка данных...</p>
+                    <Typography sx={{ textAlign: "center" }}>Загрузка данных...</Typography>
                 ) : error ? (
-                    <p style={{ color: "red", textAlign: "center" }}>Ошибка загрузки данных</p>
+                    <Typography sx={{ color: "error.main", textAlign: "center" }}>
+                        Ошибка загрузки данных
+                    </Typography>
                 ) : !order ? (
-                    <p style={{ textAlign: "center" }}>Заказ не найден</p>
+                    <Typography sx={{ textAlign: "center" }}>Заказ не найден</Typography>
                 ) : (
                     <>
-                        <div
-                            style={{
+                        <Card
+                            sx={{
                                 backgroundColor: "white",
-                                borderRadius: "8px",
-                                padding: "20px",
-                                boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-                                marginBottom: "30px",
+                                borderRadius: 3,
+                                p: 2.5,
+                                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                                mb: 3.75,
+                                transition: "transform 0.2s, box-shadow 0.2s",
+                                "&:hover": {
+                                    boxShadow: "0 6px 16px rgba(0,0,0,0.12)",
+                                },
                             }}
                         >
-                            <h3 style={{ marginTop: 0 }}>{order.name}</h3>
-                            <p>
-                                <strong>Ссылка для приглашения:</strong>{" "}
-                                <span
-                                    onClick={() => {
-                                        const fullUrl = `${window.location.origin}/orders/invite/${order.shortcut_url}`;
-                                        navigator.clipboard.writeText(fullUrl);
-                                        alert("Ссылка скопирована в буфер обмена");
-                                    }}
-                                    style={{
-                                        color: "#4CAF50",
-                                        cursor: "pointer",
-                                        textDecoration: "underline",
+                            <CardContent sx={{ p: 0, "&:last-child": { pb: 0 } }}>
+                                <Typography variant="h5" sx={{ mt: 0, mb: 1.5, fontWeight: 600 }}>
+                                    {order.name}
+                                </Typography>
+                                <Typography sx={{ mb: 1 }}>
+                                    <strong>Ссылка для приглашения:</strong>{" "}
+                                    <Box
+                                        component="span"
+                                        onClick={() => {
+                                            const fullUrl = `${window.location.origin}/orders/invite/${order.shortcut_url}`;
+                                            navigator.clipboard.writeText(fullUrl);
+                                            alert("Ссылка скопирована в буфер обмена");
+                                        }}
+                                        sx={{
+                                            color: "primary.main",
+                                            cursor: "pointer",
+                                            textDecoration: "underline",
+                                            "&:hover": {
+                                                color: "primary.dark",
+                                            },
+                                        }}
+                                    >
+                                        {`${window.location.origin}/orders/invite/${order.shortcut_url}`}
+                                    </Box>
+                                </Typography>
+                                <Typography sx={{ mb: 1 }}>
+                                    <strong>Статус:</strong>{" "}
+                                    {STATUS_TRANSLATIONS[order.status] || order.status}
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        fontSize: "1.25rem",
+                                        mt: 1.25,
+                                        color: "#333",
+                                        fontWeight: 600,
                                     }}
                                 >
-                  {`${window.location.origin}/orders/invite/${order.shortcut_url}`}
-                </span>
-                            </p>
-                            <p>
-                                <strong>Статус:</strong>{" "}
-                                {STATUS_TRANSLATIONS[order.status] || order.status}
-                            </p>
-                            <p style={{ fontSize: "1.2rem", marginTop: "10px", color: "#333" }}>
-                                <strong>Общая стоимость:</strong> {order.total_price} ₽
-                            </p>
-                        </div>
+                                    <strong>Общая стоимость:</strong> {order.total_price} ₽
+                                </Typography>
+                            </CardContent>
+                        </Card>
 
-                        <div
-                            style={{
+                        <Card
+                            sx={{
                                 backgroundColor: "#f9f9f9",
-                                borderRadius: "8px",
-                                padding: "20px",
+                                borderRadius: 3,
+                                p: 2.5,
                                 boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
+                                border: "1px solid #e0e0e0",
                             }}
                         >
-                            <h4 style={{ marginBottom: "15px", color: "#333" }}>Изображения</h4>
+                            <Typography variant="h6" sx={{ mb: 1.875, color: "#333", fontWeight: 600 }}>
+                                Изображения
+                            </Typography>
 
                             {order.images && order.images.length > 0 ? (
-                                <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
+                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5 }}>
                                     {order.images.map((img) => (
-                                        <div
+                                        <Card
                                             key={img.id}
-                                            style={{
-                                                border: "1px solid #ddd",
-                                                borderRadius: "4px",
-                                                padding: "10px",
+                                            sx={{
+                                                border: "1px solid #e0e0e0",
+                                                borderRadius: 2,
+                                                p: 1.25,
                                                 width: "140px",
                                                 textAlign: "center",
                                                 backgroundColor: "#fff",
+                                                transition: "transform 0.2s",
+                                                "&:hover": {
+                                                    transform: "translateY(-2px)",
+                                                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                                                },
                                             }}
                                         >
                                             <img
                                                 src={img.preview || img.file}
                                                 alt="Preview"
-                                                style={{ width: "100%", borderRadius: "4px" }}
+                                                style={{
+                                                    width: "100%",
+                                                    borderRadius: "8px",
+                                                    height: "100px",
+                                                    objectFit: "cover",
+                                                }}
                                             />
                                             {order.status !== "in_work" && (
-                                                <button
+                                                <Button
                                                     onClick={() => handleDeleteImage(img.id)}
-                                                    style={{
-                                                        marginTop: "10px",
+                                                    sx={{
+                                                        mt: 1.25,
                                                         color: "white",
-                                                        backgroundColor: "#f44336",
+                                                        backgroundColor: "error.main",
                                                         border: "none",
-                                                        padding: "5px 10px",
-                                                        borderRadius: "4px",
+                                                        px: 1.25,
+                                                        py: 0.625,
+                                                        borderRadius: 2,
                                                         cursor: "pointer",
+                                                        textTransform: "none",
+                                                        fontSize: "0.875rem",
+                                                        "&:hover": {
+                                                            backgroundColor: "error.dark",
+                                                        },
                                                     }}
                                                 >
                                                     Удалить
-                                                </button>
+                                                </Button>
                                             )}
-                                        </div>
+                                        </Card>
                                     ))}
-                                </div>
+                                </Box>
                             ) : (
-                                <p>Нет изображений</p>
+                                <Typography>Нет изображений</Typography>
                             )}
 
-                            <div style={{ marginTop: "30px", textAlign: "center" }}>
-                                <button
+                            <Box sx={{ mt: 3.75, textAlign: "center" }}>
+                                <Button
                                     onClick={goToAddImagePage}
                                     disabled={order.status === "in_work"}
-                                    style={{
-                                        backgroundColor: order.status === "in_work" ? "#ccc" : "#4CAF50",
+                                    variant="contained"
+                                    sx={{
+                                        backgroundColor:
+                                            order.status === "in_work" ? "grey.400" : "primary.main",
                                         color: "white",
-                                        padding: "10px 20px",
+                                        px: 2.5,
+                                        py: 1.25,
                                         border: "none",
-                                        borderRadius: "4px",
+                                        borderRadius: 2,
                                         cursor: order.status === "in_work" ? "not-allowed" : "pointer",
-                                        fontSize: "16px",
-                                        boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
-                                        marginRight: "10px",
+                                        fontSize: "1rem",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                        mr: 1.25,
+                                        textTransform: "none",
+                                        "&:hover": {
+                                            backgroundColor:
+                                                order.status === "in_work" ? "grey.400" : "primary.dark",
+                                            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                                        },
                                     }}
                                 >
                                     + Добавить изображение
-                                </button>
+                                </Button>
 
-                                <button
+                                <Button
                                     onClick={handleCompleteOrder}
                                     disabled={order.status === "in_work"}
-                                    style={{
-                                        backgroundColor: order.status === "in_work" ? "#ccc" : "#2196F3",
+                                    variant="contained"
+                                    sx={{
+                                        backgroundColor:
+                                            order.status === "in_work" ? "grey.400" : "secondary.main",
                                         color: "white",
-                                        padding: "10px 20px",
+                                        px: 2.5,
+                                        py: 1.25,
                                         border: "none",
-                                        borderRadius: "4px",
+                                        borderRadius: 2,
                                         cursor: order.status === "in_work" ? "not-allowed" : "pointer",
-                                        fontSize: "16px",
-                                        boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+                                        fontSize: "1rem",
+                                        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                        textTransform: "none",
+                                        "&:hover": {
+                                            backgroundColor:
+                                                order.status === "in_work" ? "grey.400" : "secondary.dark",
+                                            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                                        },
                                     }}
                                 >
                                     Завершить заказ
-                                </button>
-                            </div>
-                        </div>
+                                </Button>
+                            </Box>
+                        </Card>
                     </>
                 )}
-            </div>
-        </div>
+            </Box>
+        </Box>
     );
 };
 

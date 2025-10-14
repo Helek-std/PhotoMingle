@@ -1,4 +1,5 @@
 # serializers/serializers.py
+from django.db.models import Sum
 from rest_framework import serializers
 from .models import Order, Image, PrintFormat
 
@@ -33,6 +34,7 @@ class ImageSerializer(serializers.ModelSerializer):
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     images = ImageSerializer(many=True, read_only=True)
+    total_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -42,7 +44,13 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             "shortcut_url",
             "status",
             "images",
+            "total_price",
         ]
+
+    def get_total_price(self, obj):
+        return obj.images.aggregate(
+            total=Sum('format__price')
+        )['total'] or 0
 
 
 class DeleteImageInputSerializer(serializers.Serializer):

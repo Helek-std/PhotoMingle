@@ -51,16 +51,16 @@ export const ordersApi = createApi({
                 url: `/orders/${orderId}/`,
                 method: "GET",
             }),
-            providesTags: (result, error, orderId) => [{ type: "Order", id: orderId }],
+            providesTags: ['Images'],
         }),
 
         deleteOrderImage: builder.mutation({
             query: ({ orderId, imageId }) => ({
-                url: `/orders/${orderId}/delete-image/`,
+                url: `/orders/${orderId}/deleteImage/`,
                 method: "DELETE",
                 body: { image_id: imageId },
             }),
-            invalidatesTags: ['Orders'],
+            invalidatesTags: ['Orders','Images'],
         }),
         deleteOrder: builder.mutation({
             query: (orderId) => ({
@@ -71,10 +71,10 @@ export const ordersApi = createApi({
         }),
         completeOrder: builder.mutation({
             query: (orderId) => ({
-                url: `/orders/${orderId}/`,
+                url: `/orders/${orderId}/complete/`,
                 method: "POST",
             }),
-            invalidatesTags: ["Orders"],
+            invalidatesTags: ["Orders", "Images"],
         }),
         getPrintFormats: builder.query({
             query: () => 'formats/',
@@ -128,6 +128,14 @@ export const ordersApi = createApi({
                 method: "GET",
             }),
         }),
+        addImage: builder.mutation({
+            query: ({ orderId, formData }) => ({
+                url: `orders/${orderId}/addImage/`,
+                method: 'PUT',
+                body: formData,
+            }),
+            invalidatesTags: ['Images'],
+        }),
     }),
 })
 
@@ -144,5 +152,6 @@ export const {
     useEditFormatMutation,
     useDeleteFormatMutation,
     useGetMonitorStatsQuery,
-    useJoinOrderByInviteMutation
+    useJoinOrderByInviteMutation,
+    useAddImageMutation
 } = ordersApi;

@@ -1,9 +1,11 @@
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 
-from .models import PrintFormat, Order
+from .models import PrintFormat, Order, Image, OrderStatus
 from .services import get_user_orders, create_order, delete_order_image, complete_order, get_order_detail, \
     get_all_orders, delete_order, change_status
 from .serializers import (
@@ -11,7 +13,7 @@ from .serializers import (
     OrderListOutputSerializer,
     OrderCreateInputSerializer,
     OrderOutputSerializer, DeleteImageInputSerializer, CompleteOrderInputSerializer, OrderDetailSerializer,
-    PrintFormatSerializer,
+    PrintFormatSerializer, ImageSerializer,
 )
 
 class OrderListView(APIView):
@@ -55,6 +57,36 @@ class OrderDetailView(APIView):
         order = get_order_detail(order_id, request.user)
         serializer = OrderDetailSerializer(order)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+class OrderAddImage(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, order_id):
+        user = request.user
+        uuid = order_id
+        order = get_object_or_404(Order, Q(id=uuid) & (Q(owner=user) | Q(guest_users__in=[user])))
+        if order.status != OrderStatus.IN_CREATION:
+            return Response({"detail": "Order not found or access denied"}, status=403)
+        image_file = request.FILES.get('image')
+        if not image_file:
+            return Response({"detail": "No image file provided."}, status=400)
+
+        print_format_name = request.data.get('print_format')
+        if not print_format_name:
+            return Response({"detail": "Print format not provided."}, status=400)
+
+        print_format = PrintFormat.objects.filter(name=print_format_name).first()
+        if not print_format:
+            return Response({"detail": "Invalid print format."}, status=400)
+
+        image = Image.objects.create(
+            order=order,
+            file=image_file,
+            format=print_format
+        )
+
+        serializer = ImageSerializer(image)
+        return Response(serializer.data, status=200)
 
 
 class OrderDeleteImageView(APIView):
